@@ -32,10 +32,10 @@ function renderTabs() {
         tabEl.className = `tab ${tab.id === activeTabId ? 'active' : ''}`;
         tabEl.innerHTML = `
       <span class="tab__name">${tab.name}${tab.isDirty ? '*' : ''}</span>
-      <span class="tab__close" data-id="${tab.id}"></span>
+      <span class="tab__close" data-id="${tab.id}"><i data-lucide="x"></i></span>
     `;
         tabEl.onclick = (e) => {
-            if (e.target.classList.contains('tab__close')) {
+            if (e.target.closest('.tab__close')) {
                 closeTab(tab.id);
             } else {
                 switchTab(tab.id);
@@ -47,9 +47,15 @@ function renderTabs() {
     // Add "+" button
     const addBtn = document.createElement('div');
     addBtn.className = 'tabs__add';
+    addBtn.innerHTML = '<i data-lucide="plus"></i>';
     addBtn.title = 'New File (Ctrl+N)';
     addBtn.onclick = () => createTab(`Untitled-${tabs.length + 1}`, null, '');
     tabsContainer.appendChild(addBtn);
+
+    // Initialise Lucide icons
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 }
 
 function switchTab(id) {

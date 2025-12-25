@@ -263,20 +263,26 @@ body {
 }
 
 .tab__close {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    opacity: 0.4;
-    transition: opacity 0.1s, background 0.1s;
-    background: url('icons/close.png') no-repeat center;
-    background-size: 8px;
+    opacity: 0.5;
+    transition: all 0.12s ease;
+    color: var(--muted);
+}
+
+.tab__close svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2.5px;
 }
 
 .tab__close:hover {
-    background-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
     opacity: 1;
 }
 
@@ -298,17 +304,22 @@ body {
     justify-content: center;
     border-radius: var(--r-sm);
     cursor: pointer;
-    transition: background 0.1s, opacity 0.1s;
+    transition: all 0.12s ease;
     user-select: none;
-    background: rgba(255, 255, 255, 0.02) url('icons/add.png') no-repeat center;
-    background-size: 14px;
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--stroke2);
-    opacity: 0.6;
+    color: var(--muted);
+}
+
+.tabs__add svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.5px;
 }
 
 .tabs__add:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    opacity: 1;
+    color: var(--text);
     border-color: rgba(255, 255, 255, 0.14);
 }
 

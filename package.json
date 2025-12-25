@@ -1,13 +1,26 @@
 {
     "name": "notepad",
     "version": "1.0.0",
-    "description": "A premium notepad application.",
+    "description": "A simple not-microsoft notepad app.",
     "main": "electron/main.js",
+    "author": "CoreyCorza",
     "scripts": {
         "start": "electron .",
-        "dev": "electron ."
+        "dev": "electron .",
+        "build": "electron-builder"
+    },
+    "build": {
+        "appId": "com.coreycorza.notepad",
+        "productName": "Notepad",
+        "directories": {
+            "output": "dist"
+        },
+        "win": {
+            "target": "portable"
+        }
     },
     "devDependencies": {
-        "electron": "^33.2.0"
+        "electron": "^33.2.0",
+        "electron-builder": "^24.13.3"
     }
 }
