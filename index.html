@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notepad</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app">
+        <div class="window-titlebar">
+            <div class="window-menus">
+                <div class="menu-item">
+                    <span>File</span>
+                    <div class="menu-dropdown">
+                        <div id="menuNew" class="menu-action">New File</div>
+                        <div id="menuOpen" class="menu-action">Open File</div>
+                        <div id="menuSave" class="menu-action">Save</div>
+                        <div id="menuSaveAs" class="menu-action">Save As...</div>
+                        <div class="menu-divider"></div>
+                        <div id="menuPreferences" class="menu-action">Preferences</div>
+                        <div class="menu-divider"></div>
+                        <div id="menuExit" class="menu-action">Exit</div>
+                    </div>
+                </div>
+                <div class="menu-item">
+                    <span>Edit</span>
+                    <div class="menu-dropdown">
+                        <div class="menu-action" onclick="document.execCommand('undo')">Undo</div>
+                        <div class="menu-action" onclick="document.execCommand('redo')">Redo</div>
+                        <div class="menu-divider"></div>
+                        <div class="menu-action" onclick="document.execCommand('cut')">Cut</div>
+                        <div class="menu-action" onclick="document.execCommand('copy')">Copy</div>
+                        <div class="menu-action" onclick="document.execCommand('paste')">Paste</div>
+                    </div>
+                </div>
+                <div class="menu-item">
+                    <span>View</span>
+                    <div class="menu-dropdown">
+                        <div class="menu-action">Zoom In</div>
+                        <div class="menu-action">Zoom Out</div>
+                    </div>
+                </div>
+            </div>
+            <div class="window-controls">
+                <div id="winMinimize" class="win-btn win-btn--min"></div>
+                <div id="winMaximize" class="win-btn win-btn--max"></div>
+                <div id="winClose" class="win-btn win-btn--close"></div>
+            </div>
+        </div>
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <div id="tabs" class="tabs">
+                    <!-- Tabs will be injected here -->
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="editor-wrapper">
+                <div class="editor-container">
+                    <textarea id="editor" spellcheck="false"></textarea>
+                </div>
+            </div>
+        </main>
+
+        <footer class="statusbar">
+            <div class="statusbar__item">
+                <span id="filePathDisplay">Untitled-1</span>
+            </div>
+            <div style="flex: 1;"></div>
+            <div class="statusbar__item">
+                <span id="cursorPos">Ln 1, Col 1</span>
+            </div>
+            <div class="statusbar__item">
+                <span id="charCount">0 characters</span>
+            </div>
+            <div class="statusbar__item">
+                <span>UTF-8</span>
+            </div>
+        </footer>
+    </div>
+
+    <div id="prefsPanel" class="prefs-panel prefs-panel--hidden">
+        <div class="prefs-panel__head">
+            <span>Preferences</span>
+            <button id="prefsClose" class="btn--close-panel">×</button>
+        </div>
+        <div class="prefs-panel__body">
+            <div class="pref-group">
+                <label>Editor Background</label>
+                <input type="color" id="prefBgColor" data-var="--bg0">
+            </div>
+            <div class="pref-group">
+                <label>Title Bar</label>
+                <input type="color" id="prefTitleBarBg" data-var="--titlebar-bg">
+            </div>
+            <div class="pref-group">
+                <label>Tab Bar</label>
+                <input type="color" id="prefTopBarBg" data-var="--topbar-bg">
+            </div>
+            <div class="pref-group">
+                <label>Status Bar</label>
+                <input type="color" id="prefStatusBg" data-var="--statusbar-bg">
+            </div>
+            <div class="pref-group">
+                <label>Tab (Inactive)</label>
+                <input type="color" id="prefTabBg" data-var="--tab-bg">
+            </div>
+            <div class="pref-group">
+                <label>Tab (Active)</label>
+                <input type="color" id="prefTabActiveBg" data-var="--tab-active-bg">
+            </div>
+            <div class="pref-group">
+                <label>Panel / Menu</label>
+                <input type="color" id="prefPanelColor" data-var="--panel">
+            </div>
+            <div class="pref-group">
+                <label>Accent Color</label>
+                <input type="color" id="prefAccentColor" data-var="--accent">
+            </div>
+            <div class="pref-group">
+                <label>Text Color</label>
+                <input type="color" id="prefTextColor" data-var="--text">
+            </div>
+            <div style="margin-top: 20px;">
+                <button id="prefsReset" class="btn btn--ghost" style="width: 100%;">Reset to Default</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/renderer.js"></script>
+</body>
+
+</html>

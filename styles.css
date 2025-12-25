@@ -1,0 +1,538 @@
+:root {
+    --bg0: #111111;
+    --panel: #181818;
+    --text: rgba(255, 255, 255, 0.92);
+    --muted: rgba(255, 255, 255, 0.62);
+    --muted2: rgba(255, 255, 255, 0.46);
+    --accent: #d8d8d8;
+    --stroke2: rgba(255, 255, 255, 0.06);
+    --shadow: 0 14px 40px rgba(0, 0, 0, .55);
+
+    /* UI Customization */
+    --titlebar-bg: #0f0f0f;
+    --topbar-bg: #131313;
+    --statusbar-bg: #131313;
+    --tab-bg: rgba(255, 255, 255, 0.02);
+    --tab-active-bg: #181818;
+
+    --r-xs: 6px;
+    --r-sm: 6px;
+    --r-md: 6px;
+    --r-lg: 6px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg0);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    overflow: hidden;
+}
+
+.app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--stroke2);
+    /* Add border since we are frameless */
+}
+
+/* Custom Titlebar */
+.window-titlebar {
+    height: 32px;
+    background: var(--titlebar-bg);
+    display: flex;
+    align-items: center;
+    position: relative;
+    user-select: none;
+    z-index: 1000;
+    -webkit-app-region: drag;
+    /* Make the whole bar draggable */
+}
+
+/* Removed separate drag div logic */
+
+.window-menus {
+    display: flex;
+    padding-left: 6px;
+    position: relative;
+    -webkit-app-region: no-drag;
+    /* Exclude menus from dragging */
+}
+
+.menu-item {
+    position: relative;
+    padding: 0 10px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: default;
+    transition: background 0.1s;
+}
+
+.menu-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #181818;
+    border: 1px solid var(--stroke2);
+    box-shadow: var(--shadow);
+    min-width: 160px;
+    display: none;
+    padding: 4px 0;
+    border-radius: 0 var(--r-sm) var(--r-sm) var(--r-sm);
+}
+
+.menu-item:hover .menu-dropdown {
+    display: block;
+}
+
+.menu-action {
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.menu-action:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+}
+
+.menu-divider {
+    height: 1px;
+    background: var(--stroke2);
+    margin: 4px 0;
+}
+
+.window-controls {
+    display: flex;
+    margin-left: auto;
+    height: 100%;
+    -webkit-app-region: no-drag;
+}
+
+.win-btn {
+    width: 46px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    /* Change to pointer to show it's clickable */
+    position: relative;
+    /* CRITICAL: Ensure pseudo-elements center here */
+    transition: background 0.1s;
+}
+
+.win-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.win-btn--min::after {
+    content: '';
+    width: 10px;
+    height: 1px;
+    background: var(--muted);
+}
+
+.win-btn--max::after {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--muted);
+}
+
+.win-btn--close:hover {
+    background: #e81123;
+}
+
+.win-btn--close:hover::after,
+.win-btn--close:hover::before {
+    background: #fff;
+}
+
+.win-btn--close::after,
+.win-btn--close::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 1px;
+    background: var(--muted);
+}
+
+.win-btn--close::after {
+    transform: rotate(45deg);
+}
+
+.win-btn--close::before {
+    transform: rotate(-45deg);
+}
+
+/* Header / Tabs Area */
+.topbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 6px 10px 0 10px;
+    /* Remove bottom padding */
+    border-bottom: 1px solid var(--stroke2);
+    background: var(--topbar-bg);
+    height: 40px;
+    /* Reduced height to fit 32px tabs perfectly */
+}
+
+.topbar__left {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
+    height: 100%;
+}
+
+.topbar__right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    height: 100%;
+    align-items: flex-end;
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.tab {
+    flex-shrink: 0;
+    height: 32px;
+    padding: 0 12px;
+    background: var(--tab-bg);
+    border: 1px solid var(--stroke2);
+    border-bottom: none;
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--muted);
+    user-select: none;
+    max-width: 200px;
+    transition: transform .08s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+}
+
+.tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.tab.active {
+    background: var(--tab-active-bg);
+    color: var(--text);
+    border-color: var(--stroke2);
+    border-bottom: 1px solid var(--panel);
+    margin-bottom: -1px;
+    z-index: 1;
+}
+
+.tab__close {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    opacity: 0.4;
+    transition: opacity 0.1s, background 0.1s;
+    background: url('icons/close.png') no-repeat center;
+    background-size: 8px;
+}
+
+.tab__close:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    opacity: 1;
+}
+
+.tab__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tabs__add {
+    flex-shrink: 0;
+    margin-bottom: 2px;
+    align-self: center;
+    margin-left: 8px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: background 0.1s, opacity 0.1s;
+    user-select: none;
+    background: rgba(255, 255, 255, 0.02) url('icons/add.png') no-repeat center;
+    background-size: 14px;
+    border: 1px solid var(--stroke2);
+    opacity: 0.6;
+}
+
+.tabs__add:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.tabs__add:active {
+    transform: translateY(1px);
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.btn {
+    border: 1px solid var(--stroke);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: var(--r-md);
+    background: rgba(41, 41, 41, 0.04);
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: .2px;
+    transition: transform .08s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+    user-select: none;
+    font-size: 12px;
+}
+
+.btn:hover {
+    background: rgba(255, 255, 255, .05);
+    border-color: rgba(255, 255, 255, .14);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn--primary {
+    background: rgba(255, 255, 255, .08);
+    border-color: rgba(255, 255, 255, .18);
+}
+
+.btn--ghost {
+    background: rgba(255, 255, 255, .02);
+}
+
+/* Editor Area */
+.main {
+    flex: 1;
+    display: flex;
+    background: var(--bg0);
+    position: relative;
+    overflow: hidden;
+}
+
+.editor-wrapper {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+
+.editor-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+#editor {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 20px;
+    resize: none;
+    outline: none;
+    white-space: pre;
+    overflow: auto;
+}
+
+/* Scrollbars (dark) */
+* {
+    scrollbar-color: rgba(255, 255, 255, .22) rgba(0, 0, 0, .18);
+    scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, .18);
+}
+
+*::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .18);
+    border: 3px solid rgba(0, 0, 0, .18);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, .26);
+}
+
+*::-webkit-scrollbar-corner {
+    background: rgba(0, 0, 0, .18);
+}
+
+/* Status Bar */
+.statusbar {
+    height: 30px;
+    background: var(--statusbar-bg);
+    border-top: 1px solid var(--stroke2);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    font-size: 12px;
+    color: var(--muted2);
+    gap: 20px;
+}
+
+.statusbar__item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.app {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Preferences Panel */
+.prefs-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background: var(--panel);
+    border: 1px solid var(--stroke2);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.prefs-panel--hidden {
+    display: none;
+}
+
+.prefs-panel__head {
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--stroke2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.btn--close-panel {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.btn--close-panel:hover {
+    color: var(--text);
+}
+
+.prefs-panel__body {
+    padding: 20px;
+}
+
+.pref-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.pref-group label {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.pref-group input[type='color'] {
+    -webkit-appearance: none;
+    border: none;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.pref-group input[type='color']::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.pref-group input[type='color']::-webkit-color-swatch {
+    border: 1px solid var(--stroke2);
+    border-radius: 4px;
+}
