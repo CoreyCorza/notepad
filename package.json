@@ -7,7 +7,8 @@
     "scripts": {
         "start": "electron .",
         "dev": "electron .",
-        "build": "electron-builder"
+        "icon": "node scripts/make-ico.cjs",
+        "build": "npm run icon && electron-builder"
     },
     "build": {
         "appId": "com.coreycorza.notepad",
@@ -16,11 +17,34 @@
             "output": "dist"
         },
         "win": {
-            "target": "portable"
-        }
+            "target": "nsis",
+            "icon": "build/icon.ico"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "Notepad",
+            "include": "build/installer.nsh"
+        },
+        "fileAssociations": [
+            {
+                "ext": "txt",
+                "name": "Text Document",
+                "description": "Text Document",
+                "role": "Editor"
+            },
+            {
+                "ext": "md",
+                "name": "Markdown Document",
+                "role": "Editor"
+            }
+        ]
     },
     "devDependencies": {
         "electron": "^33.2.0",
-        "electron-builder": "^24.13.3"
+        "electron-builder": "^24.13.3",
+        "png-to-ico": "^3.0.1"
     }
 }

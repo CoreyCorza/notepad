@@ -23,6 +23,20 @@ function createTab(name, path, content) {
     tabs.push(tab);
     renderTabs();
     switchTab(tab.id);
+    saveAppState();
+}
+
+function saveAppState() {
+    const sessionData = {
+        tabs: tabs.map(t => ({
+            name: t.name,
+            path: t.path,
+            content: t.id === activeTabId ? editor.value : t.content,
+            isDirty: t.isDirty
+        })),
+        activeIndex: tabs.findIndex(t => t.id === activeTabId)
+    };
+    window.electronAPI.saveLastOpenFiles(sessionData);
 }
 
 function renderTabs() {
@@ -60,7 +74,7 @@ function renderTabs() {
 
 function switchTab(id) {
     // Save current content to active tab before switching
-    if (activeTabId !== null) {
+    if (activeTabId !== null && activeTabId !== id) {
         const currentTab = tabs.find(t => t.id === activeTabId);
         if (currentTab) currentTab.content = editor.value;
     }
@@ -76,11 +90,28 @@ function switchTab(id) {
     renderTabs();
 }
 
-function closeTab(id) {
-    const index = tabs.findIndex(t => t.id === id);
-    if (index === -1) return;
+async function closeTab(id) {
+    const tab = tabs.find(t => t.id === id);
+    if (!tab) return;
 
+    if (tab.isDirty) {
+        const response = await showCustomModal(
+            'Unsaved Changes',
+            `Do you want to save changes to ${tab.name}?`
+        );
+
+        if (response === 0) { // Save
+            const saved = await handleSaveFile(tab);
+            if (!saved) return;
+        } else if (response === 2) { // Cancel
+            return;
+        }
+        // response === 1 is "Don't Save", which proceeds to close
+    }
+
+    const index = tabs.findIndex(t => t.id === id);
     tabs.splice(index, 1);
+
     if (tabs.length === 0) {
         createTab('Untitled-1', null, '');
     } else if (activeTabId === id) {
@@ -88,6 +119,7 @@ function closeTab(id) {
     } else {
         renderTabs();
     }
+    saveAppState();
 }
 
 
@@ -110,6 +142,7 @@ editor.addEventListener('input', () => {
     }
     updateStatusBar();
     renderTabs();
+    saveAppState();
 });
 
 
@@ -120,27 +153,29 @@ editor.addEventListener('click', updateStatusBar);
 async function handleOpenFile() {
     const file = await window.electronAPI.openFile();
     if (file) {
-        const existing = tabs.find(t => t.path === file.path);
-        if (existing) {
-            switchTab(existing.id);
-        } else {
-            createTab(file.name, file.path, file.content);
-        }
+        handleFileOpen(file);
     }
 }
 
-async function handleSaveFile() {
-    const activeTab = tabs.find(t => t.id === activeTabId);
-    if (!activeTab) return;
+async function handleSaveFile(tabToSave) {
+    const tab = tabToSave || tabs.find(t => t.id === activeTabId);
+    if (!tab) return false;
 
-    const result = await window.electronAPI.saveFile(editor.value, activeTab.path);
+    const content = (tab.id === activeTabId) ? editor.value : tab.content;
+    const result = await window.electronAPI.saveFile(content, tab.path);
+
     if (result) {
-        activeTab.path = result.path;
-        activeTab.name = result.name;
-        activeTab.isDirty = false;
-        filePathDisplay.textContent = result.path;
+        tab.path = result.path;
+        tab.name = result.name;
+        tab.isDirty = false;
+        if (tab.id === activeTabId) {
+            filePathDisplay.textContent = result.path;
+        }
         renderTabs();
+        saveAppState();
+        return true;
     }
+    return false;
 }
 
 async function handleSaveFileAs() {
@@ -183,21 +218,79 @@ window.addEventListener('keydown', (e) => {
 // Window Controls
 document.getElementById('winMinimize').onclick = () => window.electronAPI.minimize();
 document.getElementById('winMaximize').onclick = () => window.electronAPI.maximize();
-document.getElementById('winClose').onclick = () => window.electronAPI.close();
+document.getElementById('winClose').onclick = () => handleExit();
+
+async function handleExit() {
+    const tabsToProcess = [...tabs];
+    for (const tab of tabsToProcess) {
+        if (tab.isDirty) {
+            switchTab(tab.id);
+            await closeTab(tab.id);
+            if (tabs.find(t => t.id === tab.id)) return;
+        }
+    }
+    saveAppState();
+    window.electronAPI.close();
+}
 
 // Menu Actions
 document.getElementById('menuNew').onclick = () => createTab(`Untitled-${tabs.length + 1}`, null, '');
 document.getElementById('menuOpen').onclick = () => handleOpenFile();
 document.getElementById('menuSave').onclick = () => handleSaveFile();
 document.getElementById('menuSaveAs').onclick = () => handleSaveFileAs();
+document.getElementById('menuWordWrap').onclick = () => toggleWordWrap();
 document.getElementById('menuPreferences').onclick = () => togglePrefs(true);
-document.getElementById('menuExit').onclick = () => window.electronAPI.close();
+document.getElementById('menuExit').onclick = () => handleExit();
+
+// Word Wrap Logic
+let isWordWrap = false;
+async function toggleWordWrap(val) {
+    if (val !== undefined) isWordWrap = val;
+    else isWordWrap = !isWordWrap;
+
+    editor.style.whiteSpace = isWordWrap ? 'pre-wrap' : 'pre';
+    editor.style.wordBreak = isWordWrap ? 'break-word' : 'normal';
+    document.getElementById('menuWordWrap').textContent = `Word Wrap: ${isWordWrap ? 'ON' : 'OFF'}`;
+
+    const config = await window.electronAPI.getConfig();
+    const theme = config.theme || {};
+    theme.wordWrap = isWordWrap;
+    await window.electronAPI.saveThemeConfig(theme);
+}
 
 // Preferences Logic
 const prefsPanel = document.getElementById('prefsPanel');
 const prefsClose = document.getElementById('prefsClose');
 const prefsReset = document.getElementById('prefsReset');
 const colorInputs = prefsPanel.querySelectorAll('input[type="color"]');
+
+// Custom Modal Logic
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const modalMessage = document.getElementById('modalMessage');
+const modalSave = document.getElementById('modalSave');
+const modalDontSave = document.getElementById('modalDontSave');
+const modalCancel = document.getElementById('modalCancel');
+
+function showCustomModal(title, msg) {
+    return new Promise((resolve) => {
+        modalTitle.textContent = title;
+        modalMessage.textContent = msg;
+        modalOverlay.classList.remove('modal-overlay--hidden');
+
+        const cleanup = (val) => {
+            modalSave.onclick = null;
+            modalDontSave.onclick = null;
+            modalCancel.onclick = null;
+            modalOverlay.classList.add('modal-overlay--hidden');
+            resolve(val);
+        };
+
+        modalSave.onclick = () => cleanup(0);
+        modalDontSave.onclick = () => cleanup(1);
+        modalCancel.onclick = () => cleanup(2);
+    });
+}
 
 async function saveTheme(varName, val) {
     const config = await window.electronAPI.getConfig();
@@ -265,14 +358,35 @@ async function loadPrefs() {
     const config = await window.electronAPI.getConfig();
     if (config.theme) {
         Object.entries(config.theme).forEach(([v, val]) => {
-            document.documentElement.style.setProperty(v, val);
+            if (v === 'wordWrap') {
+                toggleWordWrap(val);
+            } else {
+                document.documentElement.style.setProperty(v, val);
+            }
         });
     }
 }
-loadPrefs();
+async function restoreSession() {
+    const config = await window.electronAPI.getConfig();
+    const session = config.lastOpenFiles;
 
-// Initial tab
-createTab('Untitled-1', null, '');
+    if (session && session.tabs && session.tabs.length > 0) {
+        tabs = []; // Clear initial
+        session.tabs.forEach(tData => {
+            const tab = new Tab(tData.name, tData.path, tData.content);
+            tab.isDirty = tData.isDirty;
+            tabs.push(tab);
+        });
+        renderTabs();
+        const bIndex = session.activeIndex >= 0 ? session.activeIndex : 0;
+        switchTab(tabs[bIndex].id);
+    } else {
+        createTab('Untitled-1', null, '');
+    }
+}
+
+loadPrefs();
+restoreSession();
 
 // Mouse wheel horizontal scroll for tabs
 tabsContainer.addEventListener('wheel', (e) => {
@@ -281,3 +395,64 @@ tabsContainer.addEventListener('wheel', (e) => {
         tabsContainer.scrollLeft += e.deltaY;
     }
 });
+
+// File opening logic (shared)
+function handleFileOpen(file) {
+    if (!file) return;
+    const existing = tabs.find(t => t.path === file.path);
+    if (existing) {
+        switchTab(existing.id);
+        return;
+    }
+
+    // Polish: If we only have the initial empty tab, replace it instead of opening a second tab
+    if (tabs.length === 1 && !tabs[0].path && !tabs[0].isDirty && tabs[0].content === '') {
+        const tab = tabs[0];
+        tab.name = file.name;
+        tab.path = file.path;
+        tab.content = file.content;
+        switchTab(tab.id);
+    } else {
+        createTab(file.name, file.path, file.content);
+    }
+    saveAppState();
+}
+
+// Handle files opened from OS
+window.electronAPI.onExternalFileOpen((file) => handleFileOpen(file));
+
+// Drag and Drop (Global)
+const preventDefault = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+};
+
+window.addEventListener('dragover', (e) => {
+    preventDefault(e);
+    document.body.style.opacity = '0.7'; // Visual hint
+}, false);
+
+window.addEventListener('dragleave', (e) => {
+    preventDefault(e);
+    document.body.style.opacity = '1';
+}, false);
+
+window.addEventListener('drop', async (e) => {
+    preventDefault(e);
+    document.body.style.opacity = '1';
+
+    const files = e.dataTransfer.files;
+    console.log(`Dropped ${files.length} files`);
+
+    for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const path = window.electronAPI.getFilePath(f);
+
+        console.log('Detected file path:', path);
+
+        if (path) {
+            const fileContent = await window.electronAPI.readFile(path);
+            handleFileOpen(fileContent);
+        }
+    }
+}, false);

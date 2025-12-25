@@ -40,6 +40,8 @@
                 <div class="menu-item">
                     <span>View</span>
                     <div class="menu-dropdown">
+                        <div id="menuWordWrap" class="menu-action">Word Wrap: OFF</div>
+                        <div class="menu-divider"></div>
                         <div class="menu-action">Zoom In</div>
                         <div class="menu-action">Zoom Out</div>
                     </div>
@@ -129,6 +131,23 @@
             </div>
             <div style="margin-top: 20px;">
                 <button id="prefsReset" class="btn btn--ghost" style="width: 100%;">Reset to Default</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="modalOverlay" class="modal-overlay modal-overlay--hidden">
+        <div id="confirmModal" class="custom-modal">
+            <div class="custom-modal__head">
+                <span id="modalTitle">Unsaved Changes</span>
+            </div>
+            <div class="custom-modal__body">
+                <p id="modalMessage">Do you want to save changes?</p>
+            </div>
+            <div class="custom-modal__footer">
+                <button id="modalSave" class="btn btn--primary">Save</button>
+                <button id="modalDontSave" class="btn btn--ghost">Don't Save</button>
+                <button id="modalCancel" class="btn btn--ghost">Cancel</button>
             </div>
         </div>
     </div>
