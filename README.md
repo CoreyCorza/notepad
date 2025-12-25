@@ -1,18 +1,19 @@
 # Notepad
-A premium, multi-tabbed notepad application built with Electron.
+A notepad application built with Electron.
 
 ## Features
-- **Multi-Tab Support**: Open multiple files simultaneously in a sleek tabbed interface.
-- **Custom Themes**: Fully customizable UI colors via the Preferences panel.
-- **OS Integration**: "Open with Notepad" right-click context menu for `.txt` and `.md` files.
-- **Drag & Drop**: Drop files directly into the window to open them instantly.
-- **Word Wrap**: Persistent toggle to handle long lines of text gracefully.
-- **Single Instance**: Smart instance locking—opening a file from outside the app will use your existing window.
-- **Modern Icons**: Powered by Lucide SVG icons.
+- Custom themes
+- Dark theme confirmation modals
+- Session restoration (saves open files and unsaved notes)
+- "Open with" context menu for .txt and .md files
+- Drag and drop support
+- Word Wrap toggle
+- Single instance support
+- Custom notebook icon
 
 ## Installation
-1. Download the latest `Notepad Setup.exe` from the releases.
-2. Run the installer to add Notepad to your system and context menu.
+1. Run `Notepad Setup.exe`.
+2. This adds it to the system and context menu.
 
 ## Development
 ```bash
@@ -20,7 +21,7 @@ npm install
 npm start
 ```
 
-### Building the Installer
+### Build
 ```bash
 npm run build
 ```
