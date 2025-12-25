@@ -13,8 +13,7 @@ A notepad application built with Electron.
 - [ ] Markdown and preview
 
 ## Installation
-1. Run `Notepad Setup.exe`.
-2. This adds it to the system and context menu.
+Download from releases and run the installation 
 
 ## Development
 ```bash
