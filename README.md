@@ -1,3 +1,3 @@
 # Notepad
 
-A simple not-microsoft notepad app with multi-tab support and custom themes.
+A simple non-microsoft electron notepad app.
