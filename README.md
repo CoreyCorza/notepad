@@ -1,15 +1,16 @@
 # Notepad
 A notepad application built with Electron.
 
-## Features
-- Custom themes
-- Dark theme confirmation modals
-- Session restoration (saves open files and unsaved notes)
-- "Open with" context menu for .txt and .md files
-- Drag and drop support
-- Word Wrap toggle
-- Single instance support
-- Custom notebook icon
+## To-Do
+- [x] Custom themes
+- [x] Dark theme confirmation modals
+- [x] Session restoration (saves open files and unsaved notes)
+- [x] "Open with" context menu for .txt and .md files
+- [x] Drag and drop support
+- [x] Word Wrap toggle
+- [x] Single instance support
+- [x] Custom notebook icon
+- [ ] 
 
 ## Installation
 1. Run `Notepad Setup.exe`.
