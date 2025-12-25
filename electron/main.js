@@ -2,23 +2,38 @@ const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-// Remove native menu
 Menu.setApplicationMenu(null);
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
+let mainWindow = null;
+let filesToOpen = [];
+
+// Handle CLI arguments (for "Open with")
+function parseArgs(args) {
+  const filePath = args.find(arg => {
+    return arg !== process.execPath && !arg.startsWith('--') && fs.existsSync(arg) && fs.lstatSync(arg).isFile();
+  });
+  if (filePath) {
+    if (mainWindow) {
+      mainWindow.webContents.send('open-external-file', readFile(filePath));
+    } else {
+      filesToOpen.push(readFile(filePath));
+    }
+  }
+}
+
+function readFile(filePath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  return { path: filePath, name: path.basename(filePath), content };
+}
 
 function loadConfig() {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
       return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
     }
-  } catch (e) {
-    console.error('Failed to load config', e);
-  }
-  return {
-    windowBounds: { width: 1000, height: 700 },
-    theme: {}
-  };
+  } catch (e) { console.error(e); }
+  return { windowBounds: { width: 1000, height: 700 }, theme: {} };
 }
 
 function saveConfig(config) {
@@ -26,19 +41,17 @@ function saveConfig(config) {
     const current = loadConfig();
     const updated = { ...current, ...config };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(updated, null, 2));
-  } catch (e) {
-    console.error('Failed to save config', e);
-  }
+  } catch (e) { console.error(e); }
 }
 
 function createWindow() {
   const config = loadConfig();
   const { x, y, width, height } = config.windowBounds;
 
-  const win = new BrowserWindow({
-    x, y,
-    width, height,
+  mainWindow = new BrowserWindow({
+    x, y, width, height,
     backgroundColor: '#111111',
+    icon: path.join(__dirname, '../build/icon.png'),
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
@@ -49,52 +62,56 @@ function createWindow() {
     },
   });
 
-  win.loadFile('index.html');
+  mainWindow.loadFile('index.html');
 
-  win.once('ready-to-show', () => {
-    win.show();
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    // If there were files requested before window was ready
+    filesToOpen.forEach(file => {
+      mainWindow.webContents.send('open-external-file', file);
+    });
+    filesToOpen = [];
   });
 
-  // Save window bounds on change
-  const updateBounds = () => {
-    saveConfig({ windowBounds: win.getBounds() });
-  };
-  win.on('resize', updateBounds);
-  win.on('move', updateBounds);
+  mainWindow.on('resize', () => saveConfig({ windowBounds: mainWindow.getBounds() }));
+  mainWindow.on('move', () => saveConfig({ windowBounds: mainWindow.getBounds() }));
 }
 
-// IPC handlers for config
-ipcMain.handle('get-config', () => loadConfig());
-ipcMain.handle('save-theme-config', (event, theme) => {
-  saveConfig({ theme });
-});
-
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+// Single Instance Lock
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      parseArgs(commandLine);
     }
   });
+
+  app.whenReady().then(() => {
+    parseArgs(process.argv);
+    createWindow();
+  });
+}
+
+// IPC Handlers
+ipcMain.handle('get-config', () => loadConfig());
+ipcMain.handle('save-theme-config', (e, theme) => saveConfig({ theme }));
+ipcMain.handle('save-last-open-files', (e, files) => saveConfig({ lastOpenFiles: files }));
+ipcMain.handle('read-file', async (e, filePath) => {
+  if (!fs.existsSync(filePath)) return null;
+  return readFile(filePath);
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-// IPC handlers for file operations
 ipcMain.handle('open-file', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ['openFile'],
     filters: [{ name: 'Text Files', extensions: ['txt', 'md', 'js', 'css', 'html', 'json'] }]
   });
   if (canceled) return null;
-
-  const content = fs.readFileSync(filePaths[0], 'utf-8');
-  return { path: filePaths[0], name: path.basename(filePaths[0]), content };
+  return readFile(filePaths[0]);
 });
 
 ipcMain.handle('save-file', async (event, content, filePath) => {
@@ -105,7 +122,6 @@ ipcMain.handle('save-file', async (event, content, filePath) => {
     if (canceled) return null;
     filePath = newPath;
   }
-
   fs.writeFileSync(filePath, content, 'utf-8');
   return { path: filePath, name: path.basename(filePath) };
 });
@@ -115,25 +131,19 @@ ipcMain.handle('save-file-as', async (event, content) => {
     filters: [{ name: 'Text Files', extensions: ['txt'] }]
   });
   if (canceled) return null;
-
   fs.writeFileSync(filePath, content, 'utf-8');
   return { path: filePath, name: path.basename(filePath) };
 });
 
-ipcMain.on('window-minimize', (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (win) win.minimize();
+
+ipcMain.on('window-minimize', () => mainWindow.minimize());
+ipcMain.on('window-maximize', () => {
+  if (mainWindow.isMaximized()) mainWindow.unmaximize();
+  else mainWindow.maximize();
+});
+ipcMain.on('window-close', () => mainWindow.close());
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
 });
 
-ipcMain.on('window-maximize', (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (win) {
-    if (win.isMaximized()) win.unmaximize();
-    else win.maximize();
-  }
-});
-
-ipcMain.on('window-close', (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (win) win.close();
-});

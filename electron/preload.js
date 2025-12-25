@@ -9,4 +9,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     close: () => ipcRenderer.send('window-close'),
     getConfig: () => ipcRenderer.invoke('get-config'),
     saveThemeConfig: (theme) => ipcRenderer.invoke('save-theme-config', theme),
+    saveLastOpenFiles: (files) => ipcRenderer.invoke('save-last-open-files', files),
+    readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
+    getFilePath: (file) => require('electron').webUtils.getPathForFile(file),
+    onExternalFileOpen: (callback) => ipcRenderer.on('open-external-file', (event, file) => callback(file)),
 });
