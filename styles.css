@@ -127,6 +127,21 @@ body {
     margin-left: auto;
     height: 100%;
     -webkit-app-region: no-drag;
+    align-items: center;
+}
+
+.settings-wrapper {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.markdown-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    -webkit-app-region: no-drag;
 }
 
 .win-btn {
@@ -962,9 +977,9 @@ body {
 /* Popover Styling */
 .popover {
     position: absolute;
-    top: 36px;
-    right: 154px;
-    /* Positioned under settings button */
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
     background: var(--panel);
     border: 1px solid var(--stroke2);
     border-radius: var(--r-md);
@@ -977,6 +992,21 @@ body {
     gap: 12px;
     -webkit-app-region: no-drag;
     animation: popoverFadeIn 0.15s ease-out;
+}
+
+.settings-wrapper:hover .popover {
+    display: flex;
+}
+
+/* Invisible bridge between button and popover to prevent accidental close */
+.popover::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    right: 0;
+    width: 100%;
+    height: 10px;
+    background: transparent;
 }
 
 @keyframes popoverFadeIn {

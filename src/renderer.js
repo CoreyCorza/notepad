@@ -353,19 +353,8 @@ async function setZoom(val) {
 zoomSlider.oninput = (e) => setZoom(parseInt(e.target.value));
 
 // Quick Settings Popover
-btnQuickSettings.onclick = (e) => {
-    e.stopPropagation();
-    settingsPopover.classList.toggle('popover--visible');
-};
+// Removed click toggle; now handled by CSS :hover on .settings-wrapper
 
-// Close popover on click outside
-document.addEventListener('click', (e) => {
-    if (settingsPopover.classList.contains('popover--visible') &&
-        !settingsPopover.contains(e.target) &&
-        !btnQuickSettings.contains(e.target)) {
-        settingsPopover.classList.remove('popover--visible');
-    }
-});
 
 // Preferences Logic
 const prefsPanel = document.getElementById('prefsPanel');

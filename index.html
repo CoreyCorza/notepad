@@ -40,8 +40,29 @@
                 </div>
             </div>
             <div class="window-controls">
-                <div id="btnQuickSettings" class="md-btn" data-tooltip="Quick Settings">
-                    <i data-lucide="settings"></i>
+                <div class="settings-wrapper">
+                    <div id="btnQuickSettings" class="md-btn" data-tooltip="Quick Settings">
+                        <i data-lucide="settings"></i>
+                    </div>
+
+                    <!-- Settings Popover -->
+                    <div id="settingsPopover" class="popover">
+                        <div class="popover-item">
+                            <div class="popover-label">
+                                <span>Text Zoom</span>
+                                <span id="zoomValue">100%</span>
+                            </div>
+                            <input type="range" id="zoomSlider" min="50" max="250" value="100" step="10">
+                        </div>
+                        <div class="popover-divider"></div>
+                        <label class="popover-item popover-item--row" for="checkWordWrap">
+                            <span style="font-size: 11px; cursor: pointer;">Word Wrap</span>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="checkWordWrap">
+                                <span class="toggle-slider"></span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="control-divider"></div>
@@ -61,153 +82,133 @@
                 <div id="winClose" class="win-btn win-btn--close"></div>
             </div>
 
-            <!-- Settings Popover -->
-            <div id="settingsPopover" class="popover">
-                <div class="popover-item">
-                    <div class="popover-label">
-                        <span>Text Zoom</span>
-                        <span id="zoomValue">100%</span>
-                    </div>
-                    <input type="range" id="zoomSlider" min="50" max="250" value="100" step="10">
-                </div>
-                <div class="popover-divider"></div>
-                <label class="popover-item popover-item--row" for="checkWordWrap">
-                    <span style="font-size: 11px; cursor: pointer;">Word Wrap</span>
-                    <div class="toggle-switch">
-                        <input type="checkbox" id="checkWordWrap">
-                        <span class="toggle-slider"></span>
-                    </div>
-                </label>
-            </div>
-        </div>
-
-        <header class="topbar">
-            <div class="topbar__left">
-                <div id="tabs" class="tabs">
-                    <!-- Tabs will be injected here -->
-                </div>
-            </div>
-        </header>
-
-        <main class="main">
-            <div id="editorWrapper" class="editor-wrapper">
-                <div class="editor-container">
-                    <div class="editor-inner">
-                        <textarea id="editor" spellcheck="false"></textarea>
+            <header class="topbar">
+                <div class="topbar__left">
+                    <div id="tabs" class="tabs">
+                        <!-- Tabs will be injected here -->
                     </div>
                 </div>
-                <div id="preview" class="preview-container">
-                    <div id="previewInner" class="preview-inner"></div>
+            </header>
+
+            <main class="main">
+                <div id="editorWrapper" class="editor-wrapper">
+                    <div class="editor-container">
+                        <div class="editor-inner">
+                            <textarea id="editor" spellcheck="false"></textarea>
+                        </div>
+                    </div>
+                    <div id="preview" class="preview-container">
+                        <div id="previewInner" class="preview-inner"></div>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="statusbar">
+                <div class="statusbar__item">
+                    <span id="filePathDisplay">Untitled-1</span>
+                </div>
+                <div style="flex: 1;"></div>
+                <div class="statusbar__item">
+                    <span id="cursorPos">Ln 1, Col 1</span>
+                </div>
+                <div class="statusbar__item">
+                    <span id="charCount">0 characters</span>
+                </div>
+                <div class="statusbar__item">
+                    <span>UTF-8</span>
+                </div>
+            </footer>
+        </div>
+
+        <div id="prefsPanel" class="prefs-panel prefs-panel--hidden">
+            <div class="prefs-panel__head">
+                <span>Preferences</span>
+                <button id="prefsClose" class="btn--close-panel">×</button>
+            </div>
+            <div class="prefs-panel__body">
+                <div class="pref-group">
+                    <label>Editor Background</label>
+                    <input type="color" id="prefBgColor" data-var="--bg0">
+                </div>
+                <div class="pref-group">
+                    <label>Title Bar</label>
+                    <input type="color" id="prefTitleBarBg" data-var="--titlebar-bg">
+                </div>
+                <div class="pref-group">
+                    <label>Tab Bar</label>
+                    <input type="color" id="prefTopBarBg" data-var="--topbar-bg">
+                </div>
+                <div class="pref-group">
+                    <label>Status Bar</label>
+                    <input type="color" id="prefStatusBg" data-var="--statusbar-bg">
+                </div>
+                <div class="pref-group">
+                    <label>Tab (Inactive)</label>
+                    <input type="color" id="prefTabBg" data-var="--tab-bg">
+                </div>
+                <div class="pref-group">
+                    <label>Tab (Active)</label>
+                    <input type="color" id="prefTabActiveBg" data-var="--tab-active-bg">
+                </div>
+                <div class="pref-group">
+                    <label>Panel / Menu</label>
+                    <input type="color" id="prefPanelColor" data-var="--panel">
+                </div>
+                <div class="pref-group">
+                    <label>Accent Color</label>
+                    <input type="color" id="prefAccentColor" data-var="--accent">
+                </div>
+                <div class="pref-group">
+                    <label>Text Color</label>
+                    <input type="color" id="prefTextColor" data-var="--text">
+                </div>
+                <div class="pref-group">
+                    <label>Scrollbar</label>
+                    <input type="color" id="prefScrollbarColor" data-var="--scrollbar-thumb">
+                </div>
+                <div class="pref-group">
+                    <label>Tooltip</label>
+                    <input type="color" id="prefTooltipBg" data-var="--tooltip-bg">
+                </div>
+                <div class="pref-group">
+                    <label>Button Active</label>
+                    <input type="color" id="prefBtnActiveBg" data-var="--btn-active-bg">
+                </div>
+                <div class="pref-group">
+                    <label>Menus</label>
+                    <input type="color" id="prefMenuBg" data-var="--menu-bg">
+                </div>
+                <div style="margin-top: 20px;">
+                    <button id="prefsReset" class="btn btn--ghost" style="width: 100%;">Reset to Default</button>
                 </div>
             </div>
-        </main>
-
-        <footer class="statusbar">
-            <div class="statusbar__item">
-                <span id="filePathDisplay">Untitled-1</span>
-            </div>
-            <div style="flex: 1;"></div>
-            <div class="statusbar__item">
-                <span id="cursorPos">Ln 1, Col 1</span>
-            </div>
-            <div class="statusbar__item">
-                <span id="charCount">0 characters</span>
-            </div>
-            <div class="statusbar__item">
-                <span>UTF-8</span>
-            </div>
-        </footer>
-    </div>
-
-    <div id="prefsPanel" class="prefs-panel prefs-panel--hidden">
-        <div class="prefs-panel__head">
-            <span>Preferences</span>
-            <button id="prefsClose" class="btn--close-panel">×</button>
         </div>
-        <div class="prefs-panel__body">
-            <div class="pref-group">
-                <label>Editor Background</label>
-                <input type="color" id="prefBgColor" data-var="--bg0">
-            </div>
-            <div class="pref-group">
-                <label>Title Bar</label>
-                <input type="color" id="prefTitleBarBg" data-var="--titlebar-bg">
-            </div>
-            <div class="pref-group">
-                <label>Tab Bar</label>
-                <input type="color" id="prefTopBarBg" data-var="--topbar-bg">
-            </div>
-            <div class="pref-group">
-                <label>Status Bar</label>
-                <input type="color" id="prefStatusBg" data-var="--statusbar-bg">
-            </div>
-            <div class="pref-group">
-                <label>Tab (Inactive)</label>
-                <input type="color" id="prefTabBg" data-var="--tab-bg">
-            </div>
-            <div class="pref-group">
-                <label>Tab (Active)</label>
-                <input type="color" id="prefTabActiveBg" data-var="--tab-active-bg">
-            </div>
-            <div class="pref-group">
-                <label>Panel / Menu</label>
-                <input type="color" id="prefPanelColor" data-var="--panel">
-            </div>
-            <div class="pref-group">
-                <label>Accent Color</label>
-                <input type="color" id="prefAccentColor" data-var="--accent">
-            </div>
-            <div class="pref-group">
-                <label>Text Color</label>
-                <input type="color" id="prefTextColor" data-var="--text">
-            </div>
-            <div class="pref-group">
-                <label>Scrollbar</label>
-                <input type="color" id="prefScrollbarColor" data-var="--scrollbar-thumb">
-            </div>
-            <div class="pref-group">
-                <label>Tooltip</label>
-                <input type="color" id="prefTooltipBg" data-var="--tooltip-bg">
-            </div>
-            <div class="pref-group">
-                <label>Button Active</label>
-                <input type="color" id="prefBtnActiveBg" data-var="--btn-active-bg">
-            </div>
-            <div class="pref-group">
-                <label>Menus</label>
-                <input type="color" id="prefMenuBg" data-var="--menu-bg">
-            </div>
-            <div style="margin-top: 20px;">
-                <button id="prefsReset" class="btn btn--ghost" style="width: 100%;">Reset to Default</button>
+
+        <!-- Custom Confirmation Modal -->
+        <div id="modalOverlay" class="modal-overlay modal-overlay--hidden">
+            <div id="confirmModal" class="custom-modal">
+                <div class="custom-modal__head">
+                    <span id="modalTitle">Unsaved Changes</span>
+                </div>
+                <div class="custom-modal__body">
+                    <p id="modalMessage">Do you want to save changes?</p>
+                </div>
+                <div class="custom-modal__footer">
+                    <button id="modalSave" class="btn btn--primary">Save</button>
+                    <button id="modalDontSave" class="btn btn--ghost">Don't Save</button>
+                    <button id="modalCancel" class="btn btn--ghost">Cancel</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Custom Confirmation Modal -->
-    <div id="modalOverlay" class="modal-overlay modal-overlay--hidden">
-        <div id="confirmModal" class="custom-modal">
-            <div class="custom-modal__head">
-                <span id="modalTitle">Unsaved Changes</span>
-            </div>
-            <div class="custom-modal__body">
-                <p id="modalMessage">Do you want to save changes?</p>
-            </div>
-            <div class="custom-modal__footer">
-                <button id="modalSave" class="btn btn--primary">Save</button>
-                <button id="modalDontSave" class="btn btn--ghost">Don't Save</button>
-                <button id="modalCancel" class="btn btn--ghost">Cancel</button>
-            </div>
+        <div id="dropZone" class="drop-zone">
+            <i data-lucide="file-up"></i>
+            <span>Drop files to open</span>
         </div>
-    </div>
 
-    <div id="dropZone" class="drop-zone">
-        <i data-lucide="file-up"></i>
-        <span>Drop files to open</span>
-    </div>
+        <div id="tooltip" class="tooltip"></div>
 
-    <div id="tooltip" class="tooltip"></div>
-
-    <script src="src/renderer.js"></script>
+        <script src="src/renderer.js"></script>
 </body>
 
 </html>
