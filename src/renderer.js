@@ -10,8 +10,15 @@ const previewInner = document.getElementById('previewInner');
 const appContainer = document.querySelector('.app');
 
 
+const btnQuickSettings = document.getElementById('btnQuickSettings');
+const settingsPopover = document.getElementById('settingsPopover');
+const zoomSlider = document.getElementById('zoomSlider');
+const zoomValue = document.getElementById('zoomValue');
+const checkWordWrap = document.getElementById('checkWordWrap');
+
 let tabs = [];
 let activeTabId = null;
+let currentZoom = 100;
 
 class Tab {
     constructor(name = 'Untitled', path = null, content = '') {
@@ -302,7 +309,6 @@ document.getElementById('menuNew').onclick = () => createTab(`Untitled-${tabs.le
 document.getElementById('menuOpen').onclick = () => handleOpenFile();
 document.getElementById('menuSave').onclick = () => handleSaveFile();
 document.getElementById('menuSaveAs').onclick = () => handleSaveFileAs();
-document.getElementById('menuWordWrap').onclick = () => toggleWordWrap();
 document.getElementById('menuPreferences').onclick = () => togglePrefs(true);
 document.getElementById('menuExit').onclick = () => handleExit();
 
@@ -314,13 +320,52 @@ async function toggleWordWrap(val) {
 
     editor.style.whiteSpace = isWordWrap ? 'pre-wrap' : 'pre';
     editor.style.wordBreak = isWordWrap ? 'break-word' : 'normal';
-    document.getElementById('menuWordWrap').textContent = `Word Wrap: ${isWordWrap ? 'ON' : 'OFF'}`;
+
+    // Update the checkbox in popover
+    if (checkWordWrap) checkWordWrap.checked = isWordWrap;
 
     const config = await window.electronAPI.getConfig();
     const theme = config.theme || {};
     theme.wordWrap = isWordWrap;
     await window.electronAPI.saveThemeConfig(theme);
 }
+
+checkWordWrap.onchange = () => toggleWordWrap(checkWordWrap.checked);
+
+// Zoom Logic
+async function setZoom(val) {
+    currentZoom = val;
+    zoomSlider.value = val;
+    zoomValue.textContent = `${val}%`;
+
+    const baseEditorSize = 14;
+    const basePreviewSize = 15;
+
+    editor.style.fontSize = `${(baseEditorSize * (val / 100)).toFixed(1)}px`;
+    previewInner.style.fontSize = `${(basePreviewSize * (val / 100)).toFixed(1)}px`;
+
+    const config = await window.electronAPI.getConfig();
+    const theme = config.theme || {};
+    theme.zoom = currentZoom;
+    await window.electronAPI.saveThemeConfig(theme);
+}
+
+zoomSlider.oninput = (e) => setZoom(parseInt(e.target.value));
+
+// Quick Settings Popover
+btnQuickSettings.onclick = (e) => {
+    e.stopPropagation();
+    settingsPopover.classList.toggle('popover--visible');
+};
+
+// Close popover on click outside
+document.addEventListener('click', (e) => {
+    if (settingsPopover.classList.contains('popover--visible') &&
+        !settingsPopover.contains(e.target) &&
+        !btnQuickSettings.contains(e.target)) {
+        settingsPopover.classList.remove('popover--visible');
+    }
+});
 
 // Preferences Logic
 const prefsPanel = document.getElementById('prefsPanel');
@@ -429,6 +474,8 @@ async function loadPrefs() {
         Object.entries(config.theme).forEach(([v, val]) => {
             if (v === 'wordWrap') {
                 toggleWordWrap(val);
+            } else if (v === 'zoom') {
+                setZoom(val);
             } else {
                 document.documentElement.style.setProperty(v, val);
             }

@@ -38,17 +38,14 @@
                         <div class="menu-action" onclick="document.execCommand('paste')">Paste</div>
                     </div>
                 </div>
-                <div class="menu-item">
-                    <span>View</span>
-                    <div class="menu-dropdown">
-                        <div id="menuWordWrap" class="menu-action">Word Wrap: OFF</div>
-                        <div class="menu-divider"></div>
-                        <div class="menu-action">Zoom In</div>
-                        <div class="menu-action">Zoom Out</div>
-                    </div>
-                </div>
             </div>
             <div class="window-controls">
+                <div id="btnQuickSettings" class="md-btn" data-tooltip="Quick Settings">
+                    <i data-lucide="settings"></i>
+                </div>
+
+                <div class="control-divider"></div>
+
                 <div class="markdown-controls">
                     <div id="btnPreviewFull" class="md-btn" data-tooltip="Full Preview Mode"><i data-lucide="eye"></i>
                     </div>
@@ -56,9 +53,31 @@
                             data-lucide="columns-2"></i>
                     </div>
                 </div>
+
+                <div class="control-divider"></div>
+
                 <div id="winMinimize" class="win-btn win-btn--min"></div>
                 <div id="winMaximize" class="win-btn win-btn--max"></div>
                 <div id="winClose" class="win-btn win-btn--close"></div>
+            </div>
+
+            <!-- Settings Popover -->
+            <div id="settingsPopover" class="popover">
+                <div class="popover-item">
+                    <div class="popover-label">
+                        <span>Text Zoom</span>
+                        <span id="zoomValue">100%</span>
+                    </div>
+                    <input type="range" id="zoomSlider" min="50" max="250" value="100" step="10">
+                </div>
+                <div class="popover-divider"></div>
+                <div class="popover-item popover-item--row" id="popoverWordWrap">
+                    <span>Word Wrap</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="checkWordWrap">
+                        <span class="toggle-slider"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
