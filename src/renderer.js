@@ -3,6 +3,11 @@ const tabsContainer = document.getElementById('tabs');
 const filePathDisplay = document.getElementById('filePathDisplay');
 const cursorPosDisplay = document.getElementById('cursorPos');
 const charCountDisplay = document.getElementById('charCount');
+const btnPreviewFull = document.getElementById('btnPreviewFull');
+const btnPreviewSplit = document.getElementById('btnPreviewSplit');
+const previewContainer = document.getElementById('preview');
+const previewInner = document.getElementById('previewInner');
+const appContainer = document.querySelector('.app');
 
 
 let tabs = [];
@@ -62,7 +67,7 @@ function renderTabs() {
     const addBtn = document.createElement('div');
     addBtn.className = 'tabs__add';
     addBtn.innerHTML = '<i data-lucide="plus"></i>';
-    addBtn.title = 'New File (Ctrl+N)';
+    addBtn.setAttribute('data-tooltip', 'New File (Ctrl+N)');
     addBtn.onclick = () => createTab(`Untitled-${tabs.length + 1}`, null, '');
     tabsContainer.appendChild(addBtn);
 
@@ -85,6 +90,7 @@ function switchTab(id) {
         editor.value = activeTab.content;
         filePathDisplay.textContent = activeTab.path || activeTab.name;
         updateStatusBar();
+        updatePreview();
         editor.focus();
     }
     renderTabs();
@@ -143,7 +149,28 @@ editor.addEventListener('input', () => {
     updateStatusBar();
     renderTabs();
     saveAppState();
+    if (previewMode !== 'off') {
+        updatePreview();
+    }
 });
+
+// Handle Tab key indention
+editor.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+
+        // Using execCommand ensures the action is added to the undo stack
+        if (!document.execCommand('insertText', false, '\t')) {
+            // Fallback for environments where execCommand might not work
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            editor.value = editor.value.substring(0, start) + "\t" + editor.value.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + 1;
+            editor.dispatchEvent(new Event('input'));
+        }
+    }
+});
+
 
 
 editor.addEventListener('keyup', updateStatusBar);
@@ -220,6 +247,43 @@ document.getElementById('winMinimize').onclick = () => window.electronAPI.minimi
 document.getElementById('winMaximize').onclick = () => window.electronAPI.maximize();
 document.getElementById('winClose').onclick = () => handleExit();
 
+// Markdown Preview Logic
+let previewMode = 'off'; // 'off', 'full', 'split'
+
+function updatePreview() {
+    if (previewMode === 'off') return;
+    const content = editor.value;
+    if (window.marked) {
+        previewInner.innerHTML = marked.parse(content);
+    }
+}
+
+function setPreviewMode(mode) {
+    if (previewMode === mode) {
+        previewMode = 'off';
+    } else {
+        previewMode = mode;
+    }
+
+    // Update UI classes
+    appContainer.classList.remove('app--preview-full', 'app--preview-split');
+    btnPreviewFull.classList.remove('active');
+    btnPreviewSplit.classList.remove('active');
+
+    if (previewMode === 'full') {
+        appContainer.classList.add('app--preview-full');
+        btnPreviewFull.classList.add('active');
+        updatePreview();
+    } else if (previewMode === 'split') {
+        appContainer.classList.add('app--preview-split');
+        btnPreviewSplit.classList.add('active');
+        updatePreview();
+    }
+}
+
+btnPreviewFull.onclick = () => setPreviewMode('full');
+btnPreviewSplit.onclick = () => setPreviewMode('split');
+
 async function handleExit() {
     const tabsToProcess = [...tabs];
     for (const tab of tabsToProcess) {
@@ -243,7 +307,7 @@ document.getElementById('menuPreferences').onclick = () => togglePrefs(true);
 document.getElementById('menuExit').onclick = () => handleExit();
 
 // Word Wrap Logic
-let isWordWrap = false;
+let isWordWrap = true;
 async function toggleWordWrap(val) {
     if (val !== undefined) isWordWrap = val;
     else isWordWrap = !isWordWrap;
@@ -336,19 +400,24 @@ colorInputs.forEach(input => {
 
 prefsReset.onclick = async () => {
     const defaults = {
-        '--bg0': '#111111',
-        '--panel': '#181818',
-        '--accent': '#d8d8d8',
-        '--text': '#eeeeee',
-        '--titlebar-bg': '#0f0f0f',
-        '--topbar-bg': '#131313',
-        '--statusbar-bg': '#131313',
-        '--tab-bg': '#151515',
-        '--tab-active-bg': '#181818'
+        '--bg0': '#242424',
+        '--panel': '#212121',
+        '--accent': '#d1d1d1',
+        '--text': '#d1d1d1',
+        '--titlebar-bg': '#141414',
+        '--topbar-bg': '#1a1a1a',
+        '--statusbar-bg': '#1a1a1a',
+        '--tab-bg': '#1f1f1f',
+        '--tab-active-bg': '#242424',
+        '--scrollbar-thumb': '#333333',
+        '--tooltip-bg': '#181818',
+        '--btn-active-bg': '#242424',
+        '--menu-bg': '#141414'
     };
     Object.entries(defaults).forEach(([varName, val]) => {
         document.documentElement.style.setProperty(varName, val);
     });
+    toggleWordWrap(true);
     await window.electronAPI.saveThemeConfig({}); // Clear theme in JSON
     togglePrefs(true);
 };
@@ -422,6 +491,8 @@ function handleFileOpen(file) {
 window.electronAPI.onExternalFileOpen((file) => handleFileOpen(file));
 
 // Drag and Drop (Global)
+const dropZone = document.getElementById('dropZone');
+
 const preventDefault = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -429,30 +500,100 @@ const preventDefault = (e) => {
 
 window.addEventListener('dragover', (e) => {
     preventDefault(e);
-    document.body.style.opacity = '0.7'; // Visual hint
+    dropZone.classList.add('drop-zone--active');
 }, false);
 
 window.addEventListener('dragleave', (e) => {
     preventDefault(e);
-    document.body.style.opacity = '1';
+    // Only remove if we're leaving the window
+    if (!e.relatedTarget) {
+        dropZone.classList.remove('drop-zone--active');
+    }
 }, false);
 
 window.addEventListener('drop', async (e) => {
     preventDefault(e);
-    document.body.style.opacity = '1';
+    dropZone.classList.remove('drop-zone--active');
 
     const files = e.dataTransfer.files;
-    console.log(`Dropped ${files.length} files`);
+    if (files.length === 0) return;
 
     for (let i = 0; i < files.length; i++) {
         const f = files[i];
-        const path = window.electronAPI.getFilePath(f);
 
-        console.log('Detected file path:', path);
+        // Fallback for file path detection
+        let path = null;
+        try {
+            path = window.electronAPI.getFilePath(f) || f.path;
+        } catch (err) {
+            console.error('Path detection failed:', err);
+            path = f.path;
+        }
 
         if (path) {
             const fileContent = await window.electronAPI.readFile(path);
-            handleFileOpen(fileContent);
+            if (fileContent) {
+                handleFileOpen(fileContent);
+            }
         }
     }
 }, false);
+
+// Ensure drop zone closes if drag is canceled
+window.addEventListener('dragend', () => {
+    dropZone.classList.remove('drop-zone--active');
+});
+
+// Fix scrollbar cursor (Textareas show I-beam on scrollbars by default)
+editor.addEventListener('mousemove', (e) => {
+    const rect = editor.getBoundingClientRect();
+    // Check if mouse is over the vertical or horizontal scrollbar areas
+    // Using 18px to cover our 16px scrollbar + a tiny buffer
+    const isOverVScroll = editor.scrollHeight > editor.clientHeight && e.clientX > rect.right - 18;
+    const isOverHScroll = editor.scrollWidth > editor.clientWidth && e.clientY > rect.bottom - 18;
+
+    if (isOverVScroll || isOverHScroll) {
+        editor.style.cursor = 'default';
+    } else {
+        editor.style.cursor = 'text';
+    }
+});
+
+
+// Custom Tooltip Logic
+const tooltip = document.getElementById('tooltip');
+
+function showTooltip(e) {
+    const text = e.target.closest('[data-tooltip]')?.getAttribute('data-tooltip');
+    if (!text) return;
+
+    tooltip.textContent = text;
+    tooltip.classList.add('tooltip--visible');
+
+    const rect = e.target.closest('[data-tooltip]').getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    tooltip.style.left = `${rect.left + (rect.width / 2) - (tooltipRect.width / 2)}px`;
+    tooltip.style.top = `${rect.bottom + 8}px`;
+}
+
+function hideTooltip() {
+    tooltip.classList.remove('tooltip--visible');
+}
+
+window.addEventListener('mouseover', (e) => {
+    if (e.target.closest('[data-tooltip]')) {
+        showTooltip(e);
+    } else {
+        hideTooltip();
+    }
+});
+
+window.addEventListener('mouseout', (e) => {
+    if (e.target.closest('[data-tooltip]')) {
+        hideTooltip();
+    }
+});
+
+window.addEventListener('mousedown', hideTooltip);
+window.addEventListener('scroll', hideTooltip, true);
