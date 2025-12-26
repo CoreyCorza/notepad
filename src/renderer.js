@@ -27,6 +27,8 @@ class Tab {
         this.path = path;
         this.content = content;
         this.isDirty = false;
+        this.cursorStart = 0;
+        this.cursorEnd = 0;
     }
 }
 
@@ -163,7 +165,12 @@ function switchTab(id) {
     // Save current content to active tab before switching
     if (activeTabId !== null && activeTabId !== id) {
         const currentTab = tabs.find(t => t.id === activeTabId);
-        if (currentTab) currentTab.content = editor.value;
+        if (currentTab) {
+            currentTab.content = editor.value;
+            // Save cursor position
+            currentTab.cursorStart = editor.selectionStart;
+            currentTab.cursorEnd = editor.selectionEnd;
+        }
     }
 
     activeTabId = id;
@@ -171,6 +178,11 @@ function switchTab(id) {
     if (activeTab) {
         editor.value = activeTab.content;
         filePathDisplay.textContent = activeTab.path || activeTab.name;
+
+        // Restore cursor position
+        editor.selectionStart = activeTab.cursorStart || 0;
+        editor.selectionEnd = activeTab.cursorEnd || 0;
+
         updateStatusBar();
         updatePreview();
         editor.focus();
@@ -435,6 +447,7 @@ zoomSlider.oninput = (e) => setZoom(parseInt(e.target.value));
 const prefsPanel = document.getElementById('prefsPanel');
 const prefsClose = document.getElementById('prefsClose');
 const prefsReset = document.getElementById('prefsReset');
+const prefsSave = document.getElementById('prefsSave');
 const colorInputs = prefsPanel.querySelectorAll('input[type="color"]');
 
 // Custom Modal Logic
@@ -503,9 +516,23 @@ colorInputs.forEach(input => {
         const varName = e.target.dataset.var;
         const newVal = e.target.value;
         document.documentElement.style.setProperty(varName, newVal);
-        saveTheme(varName, newVal);
+        // Live preview only, no save
     };
 });
+
+prefsSave.onclick = async () => {
+    const config = await window.electronAPI.getConfig();
+    const theme = config.theme || {};
+
+    colorInputs.forEach(input => {
+        const varName = input.dataset.var;
+        theme[varName] = input.value;
+    });
+
+    await window.electronAPI.saveThemeConfig(theme);
+    togglePrefs(false);
+};
+
 
 prefsReset.onclick = async () => {
     const defaults = {
@@ -687,7 +714,14 @@ function showTooltip(e) {
     const rect = e.target.closest('[data-tooltip]').getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
 
-    tooltip.style.left = `${rect.left + (rect.width / 2) - (tooltipRect.width / 2)}px`;
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    const maxLeft = window.innerWidth - tooltipRect.width - 5;
+
+    // Clamp values
+    if (left < 5) left = 5;
+    if (left > maxLeft) left = maxLeft;
+
+    tooltip.style.left = `${left}px`;
     tooltip.style.top = `${rect.bottom + 8}px`;
 }
 

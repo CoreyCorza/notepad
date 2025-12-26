@@ -65,15 +65,7 @@
                     </div>
                 </div>
 
-                <div class="control-divider"></div>
-
-                <div class="markdown-controls">
-                    <div id="btnPreviewFull" class="md-btn" data-tooltip="Full Preview Mode"><i data-lucide="eye"></i>
-                    </div>
-                    <div id="btnPreviewSplit" class="md-btn" data-tooltip="Split Preview Mode"><i
-                            data-lucide="columns-2"></i>
-                    </div>
-                </div>
+                <!-- Markdown controls moved to float over editor -->
 
                 <div class="control-divider"></div>
 
@@ -94,6 +86,7 @@
         <main class="main">
             <div id="editorWrapper" class="editor-wrapper">
                 <div class="editor-container">
+
                     <div class="editor-inner">
                         <textarea id="editor" spellcheck="false"></textarea>
                     </div>
@@ -101,6 +94,11 @@
                 <div id="preview" class="preview-container">
                     <div id="previewInner" class="preview-inner"></div>
                 </div>
+            </div>
+            <div class="editor-controls">
+                <div id="btnPreviewFull" class="md-btn" data-tooltip="Full Preview Mode"><i data-lucide="eye"></i></div>
+                <div id="btnPreviewSplit" class="md-btn" data-tooltip="Split Preview Mode"><i
+                        data-lucide="columns-2"></i></div>
             </div>
         </main>
 
@@ -178,8 +176,9 @@
                     <label>Menus</label>
                     <input type="color" id="prefMenuBg" data-var="--menu-bg">
                 </div>
-                <div style="margin-top: 20px;">
-                    <button id="prefsReset" class="btn btn--ghost" style="width: 100%;">Reset to Default</button>
+                <div style="margin-top: 20px; display: flex; gap: 8px;">
+                    <button id="prefsReset" class="btn btn--ghost" style="flex: 1;">Reset</button>
+                    <button id="prefsSave" class="btn btn--primary" style="flex: 1;">Save</button>
                 </div>
             </div>
         </div>
