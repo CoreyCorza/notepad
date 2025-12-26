@@ -166,6 +166,10 @@ body {
     transition: opacity 0.2s ease;
 }
 
+.editor-controls--hidden {
+    display: none !important;
+}
+
 .main:hover .editor-controls {
     opacity: 1;
 }

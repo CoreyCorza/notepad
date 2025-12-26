@@ -7,6 +7,7 @@ const btnPreviewFull = document.getElementById('btnPreviewFull');
 const btnPreviewSplit = document.getElementById('btnPreviewSplit');
 const previewContainer = document.getElementById('preview');
 const previewInner = document.getElementById('previewInner');
+const editorControls = document.getElementById('editorControls');
 const appContainer = document.querySelector('.app');
 
 
@@ -29,6 +30,8 @@ class Tab {
         this.isDirty = false;
         this.cursorStart = 0;
         this.cursorEnd = 0;
+        this.markdownMode = false;
+        this.previewMode = 'off';
     }
 }
 
@@ -46,7 +49,9 @@ function saveAppState() {
             name: t.name,
             path: t.path,
             content: t.id === activeTabId ? editor.value : t.content,
-            isDirty: t.isDirty
+            isDirty: t.isDirty,
+            markdownMode: t.markdownMode,
+            previewMode: t.previewMode
         })),
         activeIndex: tabs.findIndex(t => t.id === activeTabId)
     };
@@ -185,9 +190,37 @@ function switchTab(id) {
 
         updateStatusBar();
         updatePreview();
+        checkMarkdownMode();
+        setPreviewMode(activeTab.previewMode || 'off', true); // Pass 'true' to avoid toggling
         editor.focus();
     }
     renderTabs();
+}
+
+function checkMarkdownMode() {
+    const activeTab = tabs.find(t => t.id === activeTabId);
+    if (!activeTab) return;
+
+    // 1. Check extension
+    const isMdExt = activeTab.path && /\.(md|markdown|mdown)$/i.test(activeTab.path);
+
+    // 2. Check content heuristics if not already detected
+    if (isMdExt) {
+        activeTab.markdownMode = true;
+    } else if (!activeTab.markdownMode) {
+        const content = editor.value;
+        const mdPattern = /(^#\s|(\*\*|__)[^*_]+(\*\*|__)|\[.+\]\(.+\)|^[-*]\s|^>\s|`[^`]+`)/m;
+        if (mdPattern.test(content)) {
+            activeTab.markdownMode = true;
+        }
+    }
+
+    // Update UI
+    if (activeTab.markdownMode) {
+        editorControls.classList.remove('editor-controls--hidden');
+    } else {
+        editorControls.classList.add('editor-controls--hidden');
+    }
 }
 
 async function closeTab(id) {
@@ -243,6 +276,7 @@ editor.addEventListener('input', () => {
     updateStatusBar();
     renderTabs();
     saveAppState();
+    checkMarkdownMode();
     if (previewMode !== 'off') {
         updatePreview();
     }
@@ -294,6 +328,7 @@ async function handleSaveFile(tabToSave) {
         }
         renderTabs();
         saveAppState();
+        checkMarkdownMode();
         return true;
     }
     return false;
@@ -310,6 +345,7 @@ async function handleSaveFileAs() {
         activeTab.isDirty = false;
         filePathDisplay.textContent = result.path;
         renderTabs();
+        checkMarkdownMode();
     }
 }
 
@@ -354,33 +390,45 @@ document.getElementById('winMaximize').onclick = () => window.electronAPI.maximi
 document.getElementById('winClose').onclick = () => handleExit();
 
 // Markdown Preview Logic
-let previewMode = 'off'; // 'off', 'full', 'split'
+let previewMode = 'off'; // Global fallback
 
 function updatePreview() {
-    if (previewMode === 'off') return;
+    const activeTab = tabs.find(t => t.id === activeTabId);
+    if (!activeTab || activeTab.previewMode === 'off') return;
+
     const content = editor.value;
     if (window.marked) {
         previewInner.innerHTML = marked.parse(content);
     }
 }
 
-function setPreviewMode(mode) {
-    if (previewMode === mode) {
-        previewMode = 'off';
+function setPreviewMode(mode, forceState = false) {
+    const activeTab = tabs.find(t => t.id === activeTabId);
+    if (!activeTab) return;
+
+    if (!forceState) {
+        if (activeTab.previewMode === mode) {
+            activeTab.previewMode = 'off';
+        } else {
+            activeTab.previewMode = mode;
+        }
     } else {
-        previewMode = mode;
+        activeTab.previewMode = mode;
     }
+
+    // Update global for backward compatibility if needed, but we mainly use tab state now
+    previewMode = activeTab.previewMode;
 
     // Update UI classes
     appContainer.classList.remove('app--preview-full', 'app--preview-split');
     btnPreviewFull.classList.remove('active');
     btnPreviewSplit.classList.remove('active');
 
-    if (previewMode === 'full') {
+    if (activeTab.previewMode === 'full') {
         appContainer.classList.add('app--preview-full');
         btnPreviewFull.classList.add('active');
         updatePreview();
-    } else if (previewMode === 'split') {
+    } else if (activeTab.previewMode === 'split') {
         appContainer.classList.add('app--preview-split');
         btnPreviewSplit.classList.add('active');
         updatePreview();
@@ -594,6 +642,8 @@ async function restoreSession() {
         session.tabs.forEach(tData => {
             const tab = new Tab(tData.name, tData.path, tData.content);
             tab.isDirty = tData.isDirty;
+            tab.markdownMode = tData.markdownMode || false;
+            tab.previewMode = tData.previewMode || 'off';
             tabs.push(tab);
         });
         renderTabs();
