@@ -999,12 +999,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    font-size: 13px;
 }
 
 .popover-item--row {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    font-size: 12px;
 }
 
 .popover-label {
