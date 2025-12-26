@@ -10,7 +10,7 @@ A notepad application built with Electron.
 - [x] Word Wrap toggle
 - [x] Single instance support
 - [x] Custom notebook icon
-- [x] Markdown and preview
+- [x] Markdown preview
 
 ## Installation
 Download from releases and run the installation 
