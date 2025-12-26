@@ -48,6 +48,7 @@
         "png-to-ico": "^3.0.1"
     },
     "dependencies": {
+        "jschardet": "^3.1.4",
         "marked": "^17.0.1"
     }
 }

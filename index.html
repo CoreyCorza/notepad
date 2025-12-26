@@ -147,7 +147,7 @@
                 <span id="charCount">0 characters</span>
             </div>
             <div class="statusbar__item">
-                <span>UTF-8</span>
+                <span id="encodingDisplay">UTF-8</span>
             </div>
         </footer>
 
@@ -255,6 +255,14 @@
             <div class="context-menu__item" id="ctxSelectAll">
                 <span>Select All</span>
             </div>
+        </div>
+
+        <!-- Emoji Picker -->
+        <div id="emojiPicker" class="emoji-picker emoji-picker--hidden">
+            <div class="emoji-picker__search">
+                <input type="text" id="emojiSearch" placeholder="Search emoji..." autocomplete="off">
+            </div>
+            <div id="emojiGrid" class="emoji-picker__grid"></div>
         </div>
 
         <script src="src/renderer.js"></script>

@@ -22,9 +22,25 @@ function parseArgs(args) {
   }
 }
 
+const jschardet = require('jschardet');
+
 function readFile(filePath) {
-  const content = fs.readFileSync(filePath, 'utf-8');
-  return { path: filePath, name: path.basename(filePath), content };
+  const buffer = fs.readFileSync(filePath);
+  const detection = jschardet.detect(buffer);
+  const encoding = detection.encoding || 'utf-8';
+
+  // Convert buffer to string based on detected encoding
+  // Node's readFileSync(path, encoding) is actually quite limited for exotic encodings
+  // but for common ones it works. For more robust we'd use iconv-lite.
+  // Standardizing to UTF-8 for the internal editor buffer.
+  const content = buffer.toString(encoding === 'ascii' ? 'utf-8' : encoding);
+
+  return {
+    path: filePath,
+    name: path.basename(filePath),
+    content,
+    encoding: encoding.toUpperCase()
+  };
 }
 
 function loadConfig() {

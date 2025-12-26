@@ -8,6 +8,7 @@ const btnPreviewSplit = document.getElementById('btnPreviewSplit');
 const previewContainer = document.getElementById('preview');
 const previewInner = document.getElementById('previewInner');
 const editorControls = document.getElementById('editorControls');
+const encodingDisplay = document.getElementById('encodingDisplay');
 const appContainer = document.querySelector('.app');
 
 
@@ -32,11 +33,13 @@ class Tab {
         this.cursorEnd = 0;
         this.markdownMode = false;
         this.previewMode = 'off';
+        this.encoding = 'UTF-8';
     }
 }
 
-function createTab(name, path, content) {
+function createTab(name, path, content, encoding = 'UTF-8') {
     const tab = new Tab(name, path, content);
+    tab.encoding = encoding;
     tabs.push(tab);
     renderTabs();
     switchTab(tab.id);
@@ -51,7 +54,8 @@ function saveAppState() {
             content: t.id === activeTabId ? editor.value : t.content,
             isDirty: t.isDirty,
             markdownMode: t.markdownMode,
-            previewMode: t.previewMode
+            previewMode: t.previewMode,
+            encoding: t.encoding
         })),
         activeIndex: tabs.findIndex(t => t.id === activeTabId)
     };
@@ -189,6 +193,7 @@ function switchTab(id) {
         editor.selectionEnd = activeTab.cursorEnd || 0;
 
         updateStatusBar();
+        encodingDisplay.textContent = activeTab.encoding || 'UTF-8';
         updatePreview();
         checkMarkdownMode();
         setPreviewMode(activeTab.previewMode || 'off', true); // Pass 'true' to avoid toggling
@@ -374,9 +379,13 @@ window.addEventListener('keydown', (e) => {
         } else if (e.key === 'h') {
             e.preventDefault();
             toggleSearch(true);
+        } else if (e.shiftKey && e.key.toLowerCase() === 'e') {
+            e.preventDefault();
+            toggleEmojiPicker();
         }
     } else if (e.key === 'Escape') {
         hideSearch();
+        hideEmojiPicker();
     } else if (e.key === 'F3') {
         e.preventDefault();
         if (e.shiftKey) findPrev();
@@ -644,6 +653,7 @@ async function restoreSession() {
             tab.isDirty = tData.isDirty;
             tab.markdownMode = tData.markdownMode || false;
             tab.previewMode = tData.previewMode || 'off';
+            tab.encoding = tData.encoding || 'UTF-8';
             tabs.push(tab);
         });
         renderTabs();
@@ -680,9 +690,10 @@ function handleFileOpen(file) {
         tab.name = file.name;
         tab.path = file.path;
         tab.content = file.content;
+        tab.encoding = file.encoding || 'UTF-8';
         switchTab(tab.id);
     } else {
-        createTab(file.name, file.path, file.content);
+        createTab(file.name, file.path, file.content, file.encoding || 'UTF-8');
     }
     saveAppState();
 }
@@ -1070,3 +1081,78 @@ replaceInput.onkeydown = (e) => {
         document.getElementById('replaceBtn').click();
     }
 };
+
+// Emoji Picker Logic
+const emojiPicker = document.getElementById('emojiPicker');
+const emojiSearch = document.getElementById('emojiSearch');
+const emojiGrid = document.getElementById('emojiGrid');
+
+const emojis = [
+    // Smileys
+    "😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾",
+    // Animals
+    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐽", "🐸", "🐵", "🐒", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🦟", "🦗", "🕷️", "🕸️", "🦂", "🐢", "🐍", "🦎", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐄", "🐎", "🐖", "🐏", "🐑", "🐐", "🦌", "🐕", "🐩", "🐈", "🐓", "🦃", "🦚", "🦜", "🦢", "🦩", "🕊️", "🐇", "🦝", "🦨", "🦡", "🦦", "🦥", "🐁", "🐀", "🐿️", "🦔",
+    // Food
+    "🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦", "🥬", "🥒", "🌶️", "🌽", "🥕", "🫒", "🧄", "🧅", "🥔", "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🥞", "🧇", "🥓", "🥩", "🍗", "🍖", "🦴", "🌭", "🍔", "🍟", "🍕", "🥪", "🌮", "🌯", "🥗", "🥘", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🧁", "🍰", "🎂", "🍮", "🍭", "🍬", "🍫", " popcorn ", "🍩", "🍪", "🌰", "🥜", "🍯", "🥛", "☕", "🫖", "🍵", "🍶", "🍾", "🍷", "🍸", "🍹", "🍺", "🍻", "🥂", "🥃", "🥤", "🧋", "🧃", "🧉", "🧊",
+    // Activities
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "⛸️", "⛳", "🏹", "Fishing", "🤿", "🥊", "🥋", "🎿", "🛷", "🥌", "🎯", "🎮", "🕹️", "🎰", "🎲", "🧩", "🧸", "🎨", "🧵", "🧶", "🎭", "🖼️", "🎤", "🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🎻", "🎬",
+    // Objects
+    "⌚", "📱", "📲", "💻", "⌨️", "🖱️", "🖨️", "📺", "📷", "📸", "📹", "📼", "🔍", "🔎", "🕯️", "💡", "🔦", "🏮", "📔", "📕", "📖", "📗", "📘", "📙", "📜", "📓", "📒", "📑", "📓", "📁", "📂", "📅", "📆", "📇", "📈", "📉", "📊", "📋", "📌", "📍", "📎", "🖇️", "📏", "📐", "✂️", "🗃️", "🗄️", "🗑️", "🔒", "🔓", "🔏", "🔐", "🔑", "🗝️", "🔨", "🪓", "⛏️", "⚒️", "🛠️", "🗡️", "⚔️", "🔫", "🏹", "🛡️", "🔧", "🔩", "⚙️", "⚖️", "🔗", "⛓️", "🧰", "🧲", "🪜", "🧱"
+];
+
+function renderEmojiGrid(filter = "") {
+    emojiGrid.innerHTML = "";
+    // In a basic version, we can't search by name without a dictionary
+    // but we can at least show all if no filter is provided.
+    const filtered = filter ? emojis.filter(e => e.includes(filter)) : emojis;
+
+    filtered.forEach(emoji => {
+        const span = document.createElement('span');
+        span.className = 'emoji-item';
+        span.textContent = emoji;
+        span.onclick = () => {
+            insertEmoji(emoji);
+            hideEmojiPicker();
+        };
+        emojiGrid.appendChild(span);
+    });
+}
+
+function insertEmoji(emoji) {
+    editor.focus();
+    // Use insertText command so it stays in UNDO stack
+    if (!document.execCommand('insertText', false, emoji)) {
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        editor.value = editor.value.substring(0, start) + emoji + editor.value.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + emoji.length;
+        editor.dispatchEvent(new Event('input'));
+    }
+}
+
+function toggleEmojiPicker() {
+    const isHidden = emojiPicker.classList.contains('emoji-picker--hidden');
+    if (isHidden) {
+        emojiPicker.classList.remove('emoji-picker--hidden');
+        emojiSearch.value = "";
+        renderEmojiGrid();
+        emojiSearch.focus();
+    } else {
+        hideEmojiPicker();
+    }
+}
+
+function hideEmojiPicker() {
+    emojiPicker.classList.add('emoji-picker--hidden');
+    editor.focus();
+}
+
+emojiSearch.oninput = (e) => {
+    renderEmojiGrid(e.target.value);
+};
+
+window.addEventListener('mousedown', (e) => {
+    if (emojiPicker && !emojiPicker.contains(e.target) && !emojiPicker.classList.contains('emoji-picker--hidden')) {
+        hideEmojiPicker();
+    }
+});
