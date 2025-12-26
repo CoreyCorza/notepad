@@ -51,15 +51,19 @@ function saveAppState() {
     window.electronAPI.saveLastOpenFiles(sessionData);
 }
 
+let draggedTabIndex = null;
+
 function renderTabs() {
     tabsContainer.innerHTML = '';
-    tabs.forEach(tab => {
+    tabs.forEach((tab, index) => {
         const tabEl = document.createElement('div');
         tabEl.className = `tab ${tab.id === activeTabId ? 'active' : ''}`;
+        tabEl.draggable = true;
         tabEl.innerHTML = `
       <span class="tab__name">${tab.name}${tab.isDirty ? '*' : ''}</span>
       <span class="tab__close" data-id="${tab.id}"><i data-lucide="x"></i></span>
     `;
+
         tabEl.onclick = (e) => {
             if (e.target.closest('.tab__close')) {
                 closeTab(tab.id);
@@ -67,6 +71,77 @@ function renderTabs() {
                 switchTab(tab.id);
             }
         };
+
+        // Drag and Drop reordering
+        tabEl.ondragstart = (e) => {
+            draggedTabIndex = index;
+            tabEl.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            // Set a custom drag image if needed, or rely on browser default
+        };
+
+        tabEl.ondragover = (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            // Calculate mouse position relative to tab center
+            const rect = tabEl.getBoundingClientRect();
+            const midpoint = rect.left + rect.width / 2;
+            const isRight = e.clientX > midpoint;
+
+            // Remove previous classes
+            tabEl.classList.remove('drag-over-left', 'drag-over-right');
+
+            // Apply specific directional class
+            if (isRight) {
+                tabEl.classList.add('drag-over-right');
+            } else {
+                tabEl.classList.add('drag-over-left');
+            }
+        };
+
+        tabEl.ondragleave = () => {
+            tabEl.classList.remove('drag-over-left', 'drag-over-right');
+        };
+
+        tabEl.ondrop = (e) => {
+            e.preventDefault();
+            tabEl.classList.remove('drag-over-left', 'drag-over-right');
+
+            if (draggedTabIndex !== null && draggedTabIndex !== index) {
+                const rect = tabEl.getBoundingClientRect();
+                const midpoint = rect.left + rect.width / 2;
+                const dropRight = e.clientX > midpoint;
+
+                // Determine new index
+                // Determine new index
+                let insertionIndex = index;
+                if (dropRight) insertionIndex++;
+
+                // Adjust for removing the element from earlier in the array
+                if (draggedTabIndex < insertionIndex) {
+                    insertionIndex--;
+                }
+
+                // Safety check and execution
+                if (draggedTabIndex >= 0 && draggedTabIndex < tabs.length) {
+                    const [draggedTab] = tabs.splice(draggedTabIndex, 1);
+                    if (draggedTab) {
+                        tabs.splice(insertionIndex, 0, draggedTab);
+                        renderTabs();
+                        saveAppState();
+                    }
+                }
+                draggedTabIndex = null;
+            }
+        };
+
+        tabEl.ondragend = () => {
+            tabEl.classList.remove('dragging');
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('drag-over-left', 'drag-over-right'));
+            draggedTabIndex = null;
+        };
+
         tabsContainer.appendChild(tabEl);
     });
 
@@ -443,7 +518,7 @@ prefsReset.onclick = async () => {
         '--statusbar-bg': '#1a1a1a',
         '--tab-bg': '#1f1f1f',
         '--tab-active-bg': '#242424',
-        '--scrollbar-thumb': '#333333',
+        '--scrollbar-thumb': '#575757',
         '--tooltip-bg': '#181818',
         '--btn-active-bg': '#242424',
         '--menu-bg': '#141414'
@@ -536,11 +611,13 @@ const preventDefault = (e) => {
 
 window.addEventListener('dragover', (e) => {
     preventDefault(e);
+    if (draggedTabIndex !== null) return; // Ignore internal tab drags
     dropZone.classList.add('drop-zone--active');
 }, false);
 
 window.addEventListener('dragleave', (e) => {
     preventDefault(e);
+    if (draggedTabIndex !== null) return; // Ignore internal tab drags
     // Only remove if we're leaving the window
     if (!e.relatedTarget) {
         dropZone.classList.remove('drop-zone--active');
@@ -549,6 +626,7 @@ window.addEventListener('dragleave', (e) => {
 
 window.addEventListener('drop', async (e) => {
     preventDefault(e);
+    if (draggedTabIndex !== null) return; // Ignore internal tab drags
     dropZone.classList.remove('drop-zone--active');
 
     const files = e.dataTransfer.files;
