@@ -5,3 +5,4 @@ dist/
 config.json
 build/
 release/
+test-preview.md

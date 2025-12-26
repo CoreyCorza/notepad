@@ -1,19 +1,23 @@
 :root {
-    --bg0: #111111;
-    --panel: #181818;
-    --text: rgba(255, 255, 255, 0.92);
+    --bg0: #242424;
+    --panel: #212121;
+    --text: #d1d1d1;
     --muted: rgba(255, 255, 255, 0.62);
     --muted2: rgba(255, 255, 255, 0.46);
-    --accent: #d8d8d8;
+    --accent: #d1d1d1;
     --stroke2: rgba(255, 255, 255, 0.06);
     --shadow: 0 14px 40px rgba(0, 0, 0, .55);
 
     /* UI Customization */
-    --titlebar-bg: #0f0f0f;
-    --topbar-bg: #131313;
-    --statusbar-bg: #131313;
-    --tab-bg: rgba(255, 255, 255, 0.02);
-    --tab-active-bg: #181818;
+    --titlebar-bg: #141414;
+    --topbar-bg: #1a1a1a;
+    --statusbar-bg: #1a1a1a;
+    --tab-bg: #1f1f1f;
+    --tab-active-bg: #242424;
+    --scrollbar-thumb: #333333;
+    --tooltip-bg: #252525;
+    --btn-active-bg: #242424;
+    --menu-bg: #181818;
 
     --r-xs: 6px;
     --r-sm: 6px;
@@ -87,7 +91,7 @@ body {
     position: absolute;
     top: 100%;
     left: 0;
-    background: #181818;
+    background: var(--menu-bg);
     border: 1px solid var(--stroke2);
     box-shadow: var(--shadow);
     min-width: 160px;
@@ -376,17 +380,31 @@ body {
 }
 
 .editor-wrapper {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 0fr;
+    /* Start with only editor */
     flex: 1;
     overflow: hidden;
+    width: 100%;
+    position: relative;
+    transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
 .editor-container {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.editor-inner {
     flex: 1;
     display: flex;
     flex-direction: column;
-    position: relative;
+    width: 100%;
 }
 
 #editor {
@@ -404,33 +422,36 @@ body {
     overflow: auto;
 }
 
-/* Scrollbars (dark) */
-* {
-    scrollbar-color: rgba(255, 255, 255, .22) rgba(0, 0, 0, .18);
-    scrollbar-width: thin;
-}
-
-*::-webkit-scrollbar {
+/* Scrollbars (Custom Webkit) */
+::-webkit-scrollbar {
     width: 12px;
+    /* Large hit zone for easy interaction */
     height: 12px;
 }
 
-*::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, .18);
+::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-*::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, .18);
-    border: 3px solid rgba(0, 0, 0, .18);
-    border-radius: 999px;
+::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--accent), transparent 100%);
+    /* Very faint accent when idle */
+    border: 6px solid transparent;
+    /* Visually thin 4px handle */
+    background-clip: padding-box;
+    border-radius: 10px;
 }
 
-*::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, .26);
+::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--accent), transparent 40%);
+    /* Dimmed accent when hovered */
+    border: 4px solid transparent;
+    /* Visually expands to 8px */
+    background-clip: padding-box;
 }
 
-*::-webkit-scrollbar-corner {
-    background: rgba(0, 0, 0, .18);
+::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 /* Status Bar */
@@ -444,6 +465,11 @@ body {
     font-size: 12px;
     color: var(--muted2);
     gap: 20px;
+}
+
+#filePathDisplay {
+    color: var(--accent);
+    font-weight: 500;
 }
 
 .statusbar__item {
@@ -532,6 +558,7 @@ body {
 
 .pref-group input[type='color'] {
     -webkit-appearance: none;
+    appearance: none;
     border: none;
     width: 32px;
     height: 32px;
@@ -547,6 +574,7 @@ body {
     border: 1px solid var(--stroke2);
     border-radius: 4px;
 }
+
 /* Custom Modal */
 .modal-overlay {
     position: fixed;
@@ -555,7 +583,7 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(1px);
     z-index: 3000;
     display: flex;
     justify-content: center;
@@ -611,3 +639,315 @@ body {
     background: white;
 }
 
+/* Markdown Controls */
+.markdown-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+    -webkit-app-region: no-drag;
+}
+
+.md-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    color: var(--muted);
+}
+
+.md-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+}
+
+.md-btn.active {
+    background: var(--btn-active-bg);
+    color: var(--accent);
+}
+
+.md-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.2px;
+}
+
+/* Preview Area */
+.preview-container {
+    min-width: 0;
+    overflow: hidden;
+    line-height: 1.6;
+    font-size: 15px;
+    background: var(--bg0);
+    border-left: 0px solid var(--stroke2);
+    color: var(--text);
+    opacity: 0;
+    transition: opacity 0.3s ease, border-width 0.4s ease;
+    outline: none;
+}
+
+.preview-inner {
+    width: 100%;
+    padding: 30px;
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+/* Full Preview Mode */
+.app--preview-full .editor-wrapper {
+    grid-template-columns: 0fr 1fr;
+}
+
+.app--preview-full .editor-container {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.app--preview-full .preview-container {
+    opacity: 1;
+    border-left-width: 0;
+}
+
+/* Split Preview Mode */
+.app--preview-split .editor-wrapper {
+    grid-template-columns: 1fr 1fr;
+}
+
+.app--preview-split .editor-container {
+    opacity: 1;
+}
+
+.app--preview-split .preview-container {
+    opacity: 1;
+    border-left-width: 1px;
+}
+
+/* Markdown styling inside preview */
+.preview-container h1,
+.preview-container h2,
+.preview-container h3,
+.preview-container h4 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--accent);
+}
+
+.preview-container h1 {
+    font-size: 2em;
+    border-bottom: 1px solid var(--stroke2);
+    padding-bottom: .3em;
+}
+
+.preview-container h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--stroke2);
+    padding-bottom: .3em;
+}
+
+.preview-container h3 {
+    font-size: 1.25em;
+}
+
+.preview-container p {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.preview-container a {
+    color: #58a6ff;
+    text-decoration: none;
+}
+
+.preview-container a:hover {
+    text-decoration: underline;
+}
+
+.preview-container code {
+    padding: .2em .4em;
+    margin: 0;
+    font-size: 85%;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    font-family: 'Consolas', monospace;
+}
+
+.preview-container pre {
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid var(--stroke2);
+}
+
+.preview-container pre code {
+    padding: 0;
+    background: transparent;
+}
+
+.preview-container blockquote {
+    padding: 0 1em;
+    color: var(--muted);
+    border-left: .25em solid var(--muted2);
+    margin: 0 0 16px 0;
+}
+
+.preview-container ul,
+.preview-container ol {
+    padding-left: 2em;
+    margin-bottom: 16px;
+}
+
+/* Hide bullets for items with checkboxes */
+.preview-container li:has(input[type="checkbox"]) {
+    list-style-type: none;
+    margin-left: -1.5em;
+}
+
+.preview-container input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--muted2);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    vertical-align: middle;
+    margin: 0 8px 3px -4px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.preview-container input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.preview-container input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 4.5px;
+    top: 1px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--bg0);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Strikethrough for completed tasks */
+.preview-container li:has(input[type="checkbox"]:checked) {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+}
+
+.preview-container table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    width: 100%;
+}
+
+.preview-container table th,
+.preview-container table td {
+    padding: 6px 13px;
+    border: 1px solid var(--stroke2);
+}
+
+.preview-container table tr {
+    background-color: transparent;
+    border-top: 1px solid var(--stroke2);
+}
+
+.preview-container table tr:nth-child(2n) {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.preview-container img {
+    max-width: 100%;
+    box-sizing: content-box;
+}
+
+.preview-container hr {
+    height: .25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: var(--stroke2);
+    border: 0;
+}
+
+/* Drag and Drop Overlay */
+.drop-zone {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 5000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    pointer-events: none;
+    border: 2px dashed var(--accent);
+    margin: 10px;
+    width: calc(100% - 20px);
+    height: calc(100% - 20px);
+    border-radius: var(--r-lg);
+    box-sizing: border-box;
+}
+
+.drop-zone--active {
+    display: flex;
+}
+
+.drop-zone svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 20px;
+    opacity: 0.8;
+}
+
+.drop-zone span {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* Custom Tooltip */
+.tooltip {
+    position: fixed;
+    background: var(--tooltip-bg);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    border: 1px solid var(--stroke2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+}
+
+.tooltip--visible {
+    opacity: 1;
+    transform: translateY(0);
+}

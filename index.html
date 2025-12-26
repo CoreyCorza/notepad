@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notepad</title>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -48,6 +49,13 @@
                 </div>
             </div>
             <div class="window-controls">
+                <div class="markdown-controls">
+                    <div id="btnPreviewFull" class="md-btn" data-tooltip="Full Preview Mode"><i data-lucide="eye"></i>
+                    </div>
+                    <div id="btnPreviewSplit" class="md-btn" data-tooltip="Split Preview Mode"><i
+                            data-lucide="columns-2"></i>
+                    </div>
+                </div>
                 <div id="winMinimize" class="win-btn win-btn--min"></div>
                 <div id="winMaximize" class="win-btn win-btn--max"></div>
                 <div id="winClose" class="win-btn win-btn--close"></div>
@@ -63,9 +71,14 @@
         </header>
 
         <main class="main">
-            <div class="editor-wrapper">
+            <div id="editorWrapper" class="editor-wrapper">
                 <div class="editor-container">
-                    <textarea id="editor" spellcheck="false"></textarea>
+                    <div class="editor-inner">
+                        <textarea id="editor" spellcheck="false"></textarea>
+                    </div>
+                </div>
+                <div id="preview" class="preview-container">
+                    <div id="previewInner" class="preview-inner"></div>
                 </div>
             </div>
         </main>
@@ -129,6 +142,22 @@
                 <label>Text Color</label>
                 <input type="color" id="prefTextColor" data-var="--text">
             </div>
+            <div class="pref-group">
+                <label>Scrollbar</label>
+                <input type="color" id="prefScrollbarColor" data-var="--scrollbar-thumb">
+            </div>
+            <div class="pref-group">
+                <label>Tooltip</label>
+                <input type="color" id="prefTooltipBg" data-var="--tooltip-bg">
+            </div>
+            <div class="pref-group">
+                <label>Button Active</label>
+                <input type="color" id="prefBtnActiveBg" data-var="--btn-active-bg">
+            </div>
+            <div class="pref-group">
+                <label>Menus</label>
+                <input type="color" id="prefMenuBg" data-var="--menu-bg">
+            </div>
             <div style="margin-top: 20px;">
                 <button id="prefsReset" class="btn btn--ghost" style="width: 100%;">Reset to Default</button>
             </div>
@@ -151,6 +180,13 @@
             </div>
         </div>
     </div>
+
+    <div id="dropZone" class="drop-zone">
+        <i data-lucide="file-up"></i>
+        <span>Drop files to open</span>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
 
     <script src="src/renderer.js"></script>
 </body>
