@@ -332,7 +332,19 @@ window.addEventListener('keydown', (e) => {
         } else if (e.key === 'w') {
             e.preventDefault();
             closeTab(activeTabId);
+        } else if (e.key === 'f') {
+            e.preventDefault();
+            toggleSearch(false);
+        } else if (e.key === 'h') {
+            e.preventDefault();
+            toggleSearch(true);
         }
+    } else if (e.key === 'Escape') {
+        hideSearch();
+    } else if (e.key === 'F3') {
+        e.preventDefault();
+        if (e.shiftKey) findPrev();
+        else findNext();
     }
 });
 
@@ -745,3 +757,266 @@ window.addEventListener('mouseout', (e) => {
 
 window.addEventListener('mousedown', hideTooltip);
 window.addEventListener('scroll', hideTooltip, true);
+
+// Custom Context Menu Logic
+const contextMenu = document.getElementById('contextMenu');
+const ctxCut = document.getElementById('ctxCut');
+const ctxCopy = document.getElementById('ctxCopy');
+const ctxPaste = document.getElementById('ctxPaste');
+const ctxSelectAll = document.getElementById('ctxSelectAll');
+
+function showContextMenu(e) {
+    e.preventDefault();
+
+    contextMenu.classList.remove('context-menu--hidden');
+
+    // Position menu
+    let x = e.clientX;
+    let y = e.clientY;
+
+    const menuWidth = contextMenu.offsetWidth;
+    const menuHeight = contextMenu.offsetHeight;
+
+    // Boundary checks
+    if (x + menuWidth > window.innerWidth) x -= menuWidth;
+    if (y + menuHeight > window.innerHeight) y -= menuHeight;
+
+    contextMenu.style.left = `${x}px`;
+    contextMenu.style.top = `${y}px`;
+}
+
+function hideContextMenu() {
+    contextMenu.classList.add('context-menu--hidden');
+}
+
+editor.addEventListener('contextmenu', showContextMenu);
+window.addEventListener('mousedown', (e) => {
+    if (!contextMenu.contains(e.target)) {
+        hideContextMenu();
+    }
+});
+
+// Context Menu Actions
+ctxCut.onclick = () => {
+    editor.focus();
+    document.execCommand('cut');
+    hideContextMenu();
+};
+
+ctxCopy.onclick = () => {
+    editor.focus();
+    document.execCommand('copy');
+    hideContextMenu();
+};
+
+async function handlePaste() {
+    editor.focus();
+    try {
+        const text = await navigator.clipboard.readText();
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const value = editor.value;
+
+        // Manual insertion
+        editor.value = value.substring(0, start) + text + value.substring(end);
+
+        // Restore cursor
+        editor.selectionStart = editor.selectionEnd = start + text.length;
+
+        // Trigger changes
+        editor.dispatchEvent(new Event('input'));
+        updateStatusBar();
+        updatePreview();
+    } catch (err) {
+        console.error('Failed to paste:', err);
+    }
+}
+
+ctxPaste.onclick = () => {
+    handlePaste();
+    hideContextMenu();
+};
+
+ctxSelectAll.onclick = () => {
+    editor.focus();
+    editor.select();
+    hideContextMenu();
+};
+// Find and Replace Logic
+const searchBar = document.getElementById('searchBar');
+const findInput = document.getElementById('findInput');
+const replaceInput = document.getElementById('replaceInput');
+const replaceRow = document.getElementById('replaceRow');
+const findCount = document.getElementById('findCount');
+const toggleCase = document.getElementById('toggleCase');
+
+let isCaseSensitive = false;
+let searchMatches = [];
+let currentSearchIndex = -1;
+
+function toggleSearch(showReplace = false) {
+    searchBar.classList.remove('search-bar--hidden');
+    if (showReplace) replaceRow.classList.remove('search-row--hidden');
+    else replaceRow.classList.add('search-row--hidden');
+
+    // If text is selected in editor, use it as search query
+    const selection = editor.value.substring(editor.selectionStart, editor.selectionEnd);
+    if (selection && selection.length < 100 && !selection.includes('\n')) {
+        findInput.value = selection;
+    }
+
+    findInput.focus();
+    findInput.select();
+    if (findInput.value) performSearch();
+}
+
+function hideSearch() {
+    searchBar.classList.add('search-bar--hidden');
+    editor.focus();
+}
+
+function performSearch() {
+    const query = findInput.value;
+    if (!query) {
+        searchMatches = [];
+        currentSearchIndex = -1;
+        updateSearchUI();
+        return;
+    }
+
+    const text = editor.value;
+    const flags = isCaseSensitive ? 'g' : 'gi';
+    // Escape regex special chars
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedQuery, flags);
+
+    searchMatches = [];
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+        searchMatches.push({ index: match.index, length: query.length });
+        // Prevent infinite loops with zero-width matches
+        if (match.index === regex.lastIndex) regex.lastIndex++;
+    }
+
+    if (searchMatches.length > 0) {
+        // Try to stay on current match or find the closest one to cursor
+        const cursorP = editor.selectionStart;
+        let bestMatch = 0;
+        let minDiff = Infinity;
+
+        searchMatches.forEach((m, i) => {
+            const diff = Math.abs(m.index - cursorP);
+            if (diff < minDiff) {
+                minDiff = diff;
+                bestMatch = i;
+            }
+        });
+
+        currentSearchIndex = bestMatch;
+        highlightMatch(currentSearchIndex);
+    } else {
+        currentSearchIndex = -1;
+    }
+    updateSearchUI();
+}
+
+function updateSearchUI() {
+    if (searchMatches.length === 0) {
+        findCount.textContent = '0/0';
+    } else {
+        findCount.textContent = `${currentSearchIndex + 1}/${searchMatches.length}`;
+    }
+}
+
+function highlightMatch(index) {
+    if (index < 0 || index >= searchMatches.length) return;
+    const match = searchMatches[index];
+    editor.setSelectionRange(match.index, match.index + match.length);
+
+    // Auto-scroll logic
+    const textarea = editor;
+    const fullText = textarea.value;
+    const textBefore = fullText.substring(0, match.index);
+    const linesBefore = textBefore.split('\n').length;
+
+    // Very basic scroll estimation
+    const lineHeight = 20; // Default estimate
+    const targetScroll = (linesBefore - 5) * lineHeight;
+
+    // Only scroll if out of view
+    const currentScroll = textarea.scrollTop;
+    const viewHeight = textarea.clientHeight;
+
+    if (targetScroll < currentScroll || targetScroll > currentScroll + viewHeight - 50) {
+        textarea.scrollTop = targetScroll;
+    }
+}
+
+function findNext() {
+    if (searchMatches.length === 0) return;
+    currentSearchIndex = (currentSearchIndex + 1) % searchMatches.length;
+    highlightMatch(currentSearchIndex);
+    updateSearchUI();
+}
+
+function findPrev() {
+    if (searchMatches.length === 0) return;
+    currentSearchIndex = (currentSearchIndex - 1 + searchMatches.length) % searchMatches.length;
+    highlightMatch(currentSearchIndex);
+    updateSearchUI();
+}
+
+// Event Bindings
+document.getElementById('closeSearch').onclick = hideSearch;
+
+toggleCase.onclick = () => {
+    isCaseSensitive = !isCaseSensitive;
+    toggleCase.classList.toggle('active', isCaseSensitive);
+    performSearch();
+};
+
+findInput.oninput = performSearch;
+
+document.getElementById('findNext').onclick = findNext;
+document.getElementById('findPrev').onclick = findPrev;
+
+document.getElementById('replaceBtn').onclick = () => {
+    if (currentSearchIndex === -1) return;
+    const match = searchMatches[currentSearchIndex];
+    editor.setSelectionRange(match.index, match.index + match.length);
+    document.execCommand('insertText', false, replaceInput.value);
+    performSearch();
+    if (searchMatches.length > 0) findNext();
+};
+
+document.getElementById('replaceAllBtn').onclick = () => {
+    const query = findInput.value;
+    if (!query) return;
+
+    const flags = isCaseSensitive ? 'g' : 'gi';
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedQuery, flags);
+
+    // Store cursor
+    const cursor = editor.selectionStart;
+    editor.value = editor.value.replace(regex, replaceInput.value);
+
+    // Restore and refresh
+    editor.selectionStart = editor.selectionEnd = cursor;
+    performSearch();
+};
+
+// Also trigger search on enter
+findInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        findNext();
+    }
+};
+
+replaceInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('replaceBtn').click();
+    }
+};

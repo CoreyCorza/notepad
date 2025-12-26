@@ -7,7 +7,7 @@
     <title>Notepad</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=1.0.4">
+    <link rel="stylesheet" href="styles.css?v=1.0.7">
 </head>
 
 <body>
@@ -35,7 +35,7 @@
                         <div class="menu-divider"></div>
                         <div class="menu-action" onclick="document.execCommand('cut')">Cut</div>
                         <div class="menu-action" onclick="document.execCommand('copy')">Copy</div>
-                        <div class="menu-action" onclick="document.execCommand('paste')">Paste</div>
+                        <div class="menu-action" onclick="handlePaste()">Paste</div>
                     </div>
                 </div>
             </div>
@@ -85,6 +85,39 @@
 
         <main class="main">
             <div id="editorWrapper" class="editor-wrapper">
+                <!-- Search Bar -->
+                <div id="searchBar" class="search-bar search-bar--hidden">
+                    <div class="search-bar__inner">
+                        <div class="search-row">
+                            <div class="search-input-wrapper">
+                                <input type="text" id="findInput" placeholder="Find..." autocomplete="off">
+                                <div class="search-options">
+                                    <button id="toggleCase" class="option-btn" data-tooltip="Match Case"><i
+                                            data-lucide="case-sensitive"></i></button>
+                                </div>
+                            </div>
+                            <div class="search-nav">
+                                <span id="findCount">0/0</span>
+                                <div class="control-divider control-divider--vertical"></div>
+                                <button id="findPrev" class="icon-btn" data-tooltip="Previous (Shift+F3)"><i
+                                        data-lucide="chevron-up"></i></button>
+                                <button id="findNext" class="icon-btn" data-tooltip="Next (F3)"><i
+                                        data-lucide="chevron-down"></i></button>
+                                <button id="closeSearch" class="icon-btn"><i data-lucide="x"></i></button>
+                            </div>
+                        </div>
+                        <div id="replaceRow" class="search-row search-row--hidden">
+                            <div class="search-input-wrapper">
+                                <input type="text" id="replaceInput" placeholder="Replace with..." autocomplete="off">
+                            </div>
+                            <div class="search-nav">
+                                <button id="replaceBtn" class="btn btn--small btn--ghost">Replace</button>
+                                <button id="replaceAllBtn" class="btn btn--small btn--primary">All</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="editor-container">
 
                     <div class="editor-inner">
@@ -206,6 +239,23 @@
         </div>
 
         <div id="tooltip" class="tooltip"></div>
+
+        <!-- Custom Context Menu -->
+        <div id="contextMenu" class="context-menu context-menu--hidden">
+            <div class="context-menu__item" id="ctxCut">
+                <span>Cut</span>
+            </div>
+            <div class="context-menu__item" id="ctxCopy">
+                <span>Copy</span>
+            </div>
+            <div class="context-menu__item" id="ctxPaste">
+                <span>Paste</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu__item" id="ctxSelectAll">
+                <span>Select All</span>
+            </div>
+        </div>
 
         <script src="src/renderer.js"></script>
 </body>

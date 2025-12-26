@@ -75,6 +75,20 @@ function createWindow() {
 
   mainWindow.on('resize', () => saveConfig({ windowBounds: mainWindow.getBounds() }));
   mainWindow.on('move', () => saveConfig({ windowBounds: mainWindow.getBounds() }));
+
+  // Enable Reload (F5/Ctrl+R) and DevTools (F12/Ctrl+Shift+I) in dev
+  if (!app.isPackaged) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.key === 'F5' || (input.control && input.key.toLowerCase() === 'r')) {
+        mainWindow.reload();
+        event.preventDefault();
+      }
+      if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+        mainWindow.webContents.toggleDevTools();
+        event.preventDefault();
+      }
+    });
+  }
 }
 
 // Single Instance Lock
